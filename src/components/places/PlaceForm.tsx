@@ -94,7 +94,7 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit }: PlaceFo
                 <SelectValue placeholder="Select rating" />
               </SelectTrigger>
               <SelectContent>
-                {[1,2,3,4,5].map((n) => (
+                {[0,1,2,3,4,5].map((n) => (
                   <SelectItem key={n} value={String(n)}>{n} {"★".repeat(n)}</SelectItem>
                 ))}
               </SelectContent>

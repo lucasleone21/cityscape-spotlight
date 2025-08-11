@@ -9,6 +9,7 @@ export type MapMarker = {
   rating?: number;
   recommended?: boolean;
   category?: string;
+  review?: string;
 };
 
 interface MapViewProps {
@@ -100,20 +101,22 @@ const MapView: React.FC<MapViewProps> = ({
 
     markers.forEach((m) => {
       const recommended = m.recommended ? " map-marker--recommended" : "";
+      const size = m.recommended ? 20 : 16;
       const icon = L.divIcon({
         html: `<div class="map-marker${recommended}"></div>`,
         className: "",
-        iconSize: [16, 16],
-        iconAnchor: [8, 8],
-        popupAnchor: [0, -10],
+        iconSize: [size, size] as [number, number],
+        iconAnchor: [size / 2, size / 2] as [number, number],
+        popupAnchor: [0, -(size / 2)] as [number, number],
       });
 
       const popupHtml = `
-        <div style="min-width:180px">
+        <div style="min-width:200px">
           <strong>${m.title}</strong>
           ${typeof m.rating === "number" ? `<div>Rating: ${"★".repeat(Math.round(m.rating))}</div>` : ""}
           ${m.category ? `<div>Category: ${m.category}</div>` : ""}
-          ${m.recommended ? `<div>Recommended</div>` : ""}
+          ${m.review ? `<div style="margin-top:6px;">${m.review}</div>` : ""}
+          ${m.recommended ? `<div style=\"margin-top:4px;\"><em>Recommended</em></div>` : ""}
         </div>
       `;
 

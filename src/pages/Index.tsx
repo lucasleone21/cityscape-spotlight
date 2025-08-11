@@ -76,6 +76,7 @@ const Index = () => {
     rating: p.rating,
     recommended: p.recommended,
     category: p.category,
+    review: p.review,
   }));
 
   const cityCenter = CITIES[selectedCity]?.center;

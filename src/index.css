@@ -107,19 +107,30 @@ All colors MUST be HSL.
 @layer components {
   /* Map marker styles using design system tokens */
   .map-marker {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border-radius: 9999px;
     border: 2px solid hsl(var(--background));
     background: hsl(var(--muted));
     box-shadow: var(--shadow-elegant);
-    transition: transform var(--transition-smooth);
+    transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
     transform: translateZ(0);
+    position: relative;
   }
   .map-marker:hover {
-    transform: scale(1.15);
+    transform: scale(1.12);
   }
   .map-marker--recommended {
     background: var(--gradient-primary);
+    box-shadow: 0 10px 30px -10px hsl(var(--primary-glow) / 0.45), var(--shadow-elegant);
+  }
+  .map-marker--recommended::after {
+    content: '★';
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    color: hsl(var(--primary-foreground));
   }
 }
