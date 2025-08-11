@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import mapboxgl, { Map, Marker, Popup } from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import L, { Map as LeafletMap, Marker as LeafletMarker, LayerGroup } from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 export type MapMarker = {
   id: string;
@@ -12,7 +12,6 @@ export type MapMarker = {
 };
 
 interface MapViewProps {
-  accessToken?: string;
   center?: [number, number];
   focus?: [number, number];
   zoom?: number;
@@ -22,7 +21,6 @@ interface MapViewProps {
 }
 
 const MapView: React.FC<MapViewProps> = ({
-  accessToken,
   center,
   focus,
   zoom = 3,
@@ -31,77 +29,84 @@ const MapView: React.FC<MapViewProps> = ({
   onMapClick,
 }) => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<Map | null>(null);
-  const markersRef = useRef<Record<string, Marker>>({});
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markerLayerRef = useRef<LayerGroup | null>(null);
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || !accessToken) return;
+    if (!mapContainer.current) return;
 
-    mapboxgl.accessToken = accessToken;
-
-    mapRef.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: center ?? [0, 20],
+    const map = L.map(mapContainer.current, {
+      center: center ?? [20, 0],
       zoom,
-      projection: "globe",
+      zoomControl: true,
+      attributionControl: true,
     });
 
-    mapRef.current.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
 
-    const onClick = (e: mapboxgl.MapMouseEvent) => {
-      if (adminMode && onMapClick) {
-        onMapClick(e.lngLat.lng, e.lngLat.lat);
-      }
-    };
-
-    mapRef.current.on("click", onClick);
-
-    mapRef.current.on("style.load", () => {
-      try {
-        mapRef.current?.setFog({
-          color: "rgb(255,255,255)",
-          "high-color": "rgb(190, 200, 255)",
-          "horizon-blend": 0.1,
-        } as any);
-      } catch (_) {}
-    });
+    mapRef.current = map;
+    markerLayerRef.current = L.layerGroup().addTo(map);
 
     return () => {
-      mapRef.current?.off("click", onClick);
-      mapRef.current?.remove();
+      map.remove();
       mapRef.current = null;
+      markerLayerRef.current = null;
     };
-  }, [accessToken]);
+  }, []);
 
-  // Fly to city center
+  // City center change
   useEffect(() => {
     if (mapRef.current && center) {
-      mapRef.current.flyTo({ center, zoom: 11, essential: true });
+      mapRef.current.flyTo([center[1], center[0]] as any, 11, { animate: true });
     }
   }, [center]);
 
-  // Focus on specific coordinate (e.g., from list)
+  // Focus on specific coordinate
   useEffect(() => {
     if (mapRef.current && focus) {
-      mapRef.current.flyTo({ center: focus, zoom: 14, essential: true });
+      mapRef.current.flyTo([focus[1], focus[0]] as any, 14, { animate: true });
     }
   }, [focus]);
 
-  // Draw markers
+  // Admin click handler
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Remove old markers
-    Object.values(markersRef.current).forEach((m) => m.remove());
-    markersRef.current = {};
+    const handler = (e: L.LeafletMouseEvent) => {
+      if (adminMode && onMapClick) {
+        onMapClick(e.latlng.lng, e.latlng.lat);
+      }
+    };
+
+    map.on("click", handler);
+    return () => {
+      map.off("click", handler);
+    };
+  }, [adminMode, onMapClick]);
+
+  // Render markers
+  useEffect(() => {
+    const group = markerLayerRef.current;
+    const map = mapRef.current;
+    if (!group || !map) return;
+
+    group.clearLayers();
 
     markers.forEach((m) => {
-      const el = document.createElement("div");
-      el.className = `map-marker${m.recommended ? " map-marker--recommended" : ""}`;
-      el.setAttribute("aria-label", m.title);
+      const recommended = m.recommended ? " map-marker--recommended" : "";
+      const icon = L.divIcon({
+        html: `<div class="map-marker${recommended}"></div>`,
+        className: "",
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+        popupAnchor: [0, -10],
+      });
 
       const popupHtml = `
         <div style="min-width:180px">
@@ -112,29 +117,15 @@ const MapView: React.FC<MapViewProps> = ({
         </div>
       `;
 
-      const marker = new mapboxgl.Marker({ element: el })
-        .setLngLat(m.coordinates)
-        .setPopup(new Popup({ offset: 12 }).setHTML(popupHtml))
-        .addTo(map);
+      const marker: LeafletMarker = L.marker([m.coordinates[1], m.coordinates[0]], { icon })
+        .bindPopup(popupHtml)
+        .addTo(group);
 
-      markersRef.current[m.id] = marker;
+      return marker;
     });
   }, [markers]);
 
-  return (
-    <div className="relative w-full h-full">
-      {!accessToken && (
-        <div className="absolute inset-0 z-10 grid place-items-center">
-          <div className="rounded-lg border bg-card p-6 text-center shadow-sm">
-            <h2 className="text-lg font-semibold">Mapbox token required</h2>
-            <p className="text-sm text-muted-foreground">Enter a Mapbox public token in the sidebar to load the map.</p>
-          </div>
-        </div>
-      )}
-      <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
-      <div className="absolute inset-0 pointer-events-none rounded-lg" />
-    </div>
-  );
+  return <div ref={mapContainer} className="absolute inset-0 rounded-lg" />;
 };
 
 export default MapView;

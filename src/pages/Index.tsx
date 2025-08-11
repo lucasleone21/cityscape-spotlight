@@ -3,8 +3,6 @@ import MapView, { MapMarker } from "@/components/map/MapView";
 import PlaceForm, { PlaceFormData } from "@/components/places/PlaceForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
 
@@ -31,16 +29,6 @@ type Place = {
 };
 
 const Index = () => {
-  // Mapbox token (temporary input until Supabase secrets are used)
-  const [mapboxToken, setMapboxToken] = useState<string>("");
-  useEffect(() => {
-    const saved = localStorage.getItem("mapboxToken");
-    if (saved) setMapboxToken(saved);
-  }, []);
-  useEffect(() => {
-    if (mapboxToken) localStorage.setItem("mapboxToken", mapboxToken);
-  }, [mapboxToken]);
-
   const [adminMode, setAdminMode] = useState(false);
   const [selectedCity, setSelectedCity] = useState<keyof typeof CITIES>("New York");
   const [selectedCategory, setSelectedCategory] = useState<Category>("All");
@@ -112,16 +100,6 @@ const Index = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-2">
-                <label className="text-sm">Mapbox public token</label>
-                <Input
-                  value={mapboxToken}
-                  onChange={(e) => setMapboxToken(e.target.value)}
-                  placeholder="pk.eyJ..."
-                />
-                <p className="text-xs text-muted-foreground">Temporary input. We can secure this via Supabase secrets next.</p>
-              </div>
-
-              <div className="grid gap-2">
                 <label className="text-sm">City</label>
                 <Select value={selectedCity} onValueChange={(v) => setSelectedCity(v as keyof typeof CITIES)}>
                   <SelectTrigger>
@@ -172,7 +150,7 @@ const Index = () => {
                     {p.recommended && <span className="text-xs text-primary">Recommended</span>}
                   </div>
                   <div className="text-xs text-muted-foreground">{p.category} • {"★".repeat(Math.round(p.rating))}</div>
-                  {p.review && <div className="mt-1 text-sm text-muted-foreground line-clamp-2">{p.review}</div>}
+                  {p.review && <div className="mt-1 text-sm text-muted-foreground">{p.review}</div>}
                 </button>
               ))}
             </CardContent>
@@ -180,9 +158,8 @@ const Index = () => {
         </aside>
 
         <section className="min-h-[60vh] md:min-h-[75vh]">
-          <div className="h-[70vh] md:h-[78vh] rounded-lg border overflow-hidden">
+          <div className="h-[70vh] md:h-[78vh] rounded-lg border overflow-hidden relative">
             <MapView
-              accessToken={mapboxToken}
               center={cityCenter}
               focus={focus}
               markers={markers}
