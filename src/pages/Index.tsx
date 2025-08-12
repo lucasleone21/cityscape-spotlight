@@ -206,7 +206,9 @@ const Index = () => {
         <section className={`absolute top-0 right-0 h-full transition-all duration-300 ${
           sidebarVisible ? 'left-80' : 'left-0'
         }`}>
-          <div className={`h-full map-container ${!sidebarVisible ? 'map-container--fullscreen' : ''} m-4`}>
+          <div className={`h-full map-container ${!sidebarVisible ? 'map-container--fullscreen' : ''} m-4 ${
+            formOpen ? 'pointer-events-none opacity-50' : ''
+          }`}>
             <MapView
               center={cityCenter}
               focus={focus}
@@ -218,18 +220,21 @@ const Index = () => {
         </section>
       </main>
 
-      {/* Admin Form - positioned in sidebar area */}
+      {/* Admin Form - positioned to not cover sidebar */}
       {formOpen && (
-        <div className="admin-form-overlay">
-          <PlaceForm
-            open={formOpen}
-            onOpenChange={setFormOpen}
-            coords={clickCoords}
-            categories={CATEGORIES.filter((c) => c !== "All") as string[]}
-            onSubmit={handleAddPlace}
-            variant="sidebar"
-          />
-        </div>
+        <>
+          <div className="admin-form-backdrop" onClick={() => setFormOpen(false)} />
+          <div className={`admin-form-overlay ${sidebarVisible ? 'admin-form-overlay--shifted' : ''}`}>
+            <PlaceForm
+              open={formOpen}
+              onOpenChange={setFormOpen}
+              coords={clickCoords}
+              categories={CATEGORIES.filter((c) => c !== "All") as string[]}
+              onSubmit={handleAddPlace}
+              variant="sidebar"
+            />
+          </div>
+        </>
       )}
     </div>
   );

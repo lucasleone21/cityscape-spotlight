@@ -48,7 +48,17 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
     return (
       <div className="h-full">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">Add highlighted place</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-semibold">Add highlighted place</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8 p-0 rounded-full"
+            >
+              ✕
+            </Button>
+          </div>
           <p className="text-sm text-muted-foreground">
             Share your review and mark as recommended. Visitors will see these on the map.
           </p>

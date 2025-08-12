@@ -208,16 +208,34 @@ All colors MUST be HSL.
   /* Admin form overlay */
   .admin-form-overlay {
     position: fixed;
-    top: 0;
+    top: 88px; /* Below header */
     left: 0;
     width: 380px;
-    height: 100vh;
-    background: hsl(var(--background) / 0.95);
+    height: calc(100vh - 88px);
+    background: hsl(var(--background) / 0.98);
     backdrop-filter: blur(20px);
     border-right: 1px solid hsl(var(--border));
     box-shadow: var(--shadow-elegant);
-    z-index: 50;
+    z-index: 60;
     overflow-y: auto;
     padding: 1.5rem;
+    transition: transform var(--transition-spring);
+  }
+
+  .admin-form-overlay--shifted {
+    left: 320px;
+    width: 360px;
+    background: hsl(var(--background) / 0.95);
+    border-left: 1px solid hsl(var(--border));
+    border-right: none;
+  }
+
+  .admin-form-backdrop {
+    position: fixed;
+    inset: 0;
+    background: hsl(var(--foreground) / 0.1);
+    backdrop-filter: blur(2px);
+    z-index: 55;
+    transition: opacity var(--transition-smooth);
   }
 }
