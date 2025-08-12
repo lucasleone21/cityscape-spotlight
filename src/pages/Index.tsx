@@ -177,7 +177,7 @@ const Index = () => {
                 {filteredPlaces.map((p) => (
                   <div
                     key={p.id}
-                    className={`place-card ${p.recommended ? 'place-card--recommended' : ''}`}
+                    className={`place-card ${p.recommended ? 'place-card--recommended' : ''} cursor-pointer`}
                     onClick={() => setFocus(p.coordinates)}
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -205,6 +205,8 @@ const Index = () => {
         {/* Map Section */}
         <section className={`absolute top-0 right-0 h-full transition-all duration-300 ${
           sidebarVisible ? 'left-80' : 'left-0'
+        } ${
+          formOpen ? (sidebarVisible ? 'map-container--form-open-shifted' : 'map-container--form-open') : ''
         }`}>
           <div className={`h-full map-container ${!sidebarVisible ? 'map-container--fullscreen' : ''} m-4 ${
             formOpen ? 'pointer-events-none opacity-50' : ''

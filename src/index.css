@@ -230,6 +230,15 @@ All colors MUST be HSL.
     border-right: none;
   }
 
+  /* Map container adjustments for admin form */
+  .map-container--form-open {
+    right: 380px !important;
+  }
+  
+  .map-container--form-open-shifted {
+    right: 360px !important;
+  }
+
   .admin-form-backdrop {
     position: fixed;
     inset: 0;

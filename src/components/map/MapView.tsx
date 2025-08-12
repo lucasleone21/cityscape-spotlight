@@ -101,7 +101,7 @@ const MapView: React.FC<MapViewProps> = ({
 
     markers.forEach((m) => {
       const recommended = m.recommended ? " map-marker--recommended" : "";
-      const size = m.recommended ? 20 : 16;
+      const size = m.recommended ? 32 : 20; // Made bigger: 32px for recommended, 20px for regular
       const icon = L.divIcon({
         html: `<div class="map-marker${recommended}"></div>`,
         className: "",
