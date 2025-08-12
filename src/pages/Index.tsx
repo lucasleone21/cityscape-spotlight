@@ -4,7 +4,9 @@ import PlaceForm, { PlaceFormData } from "@/components/places/PlaceForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
+import { PanelLeftClose, PanelLeftOpen, MapPin, Star } from "lucide-react";
 
 const CITIES: Record<string, { center: [number, number]; zoom: number }> = {
   "São Paulo": { center: [-46.6333, -23.5505], zoom: 11 },
@@ -32,6 +34,7 @@ const Index = () => {
   const [adminMode, setAdminMode] = useState(false);
   const [selectedCity, setSelectedCity] = useState<keyof typeof CITIES>("New York");
   const [selectedCategory, setSelectedCategory] = useState<Category>("All");
+  const [sidebarVisible, setSidebarVisible] = useState(true);
 
   const [places, setPlaces] = useState<Place[]>([]);
   const [formOpen, setFormOpen] = useState(false);
@@ -82,84 +85,128 @@ const Index = () => {
   const cityCenter = CITIES[selectedCity]?.center;
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <header className="app-header sticky top-0 z-40">
         <div className="container py-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold">City Explorer – Curated Map</h1>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Admin mode</span>
-            <Switch checked={adminMode} onCheckedChange={setAdminMode} />
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={() => setSidebarVisible(!sidebarVisible)}
+              variant="ghost"
+              size="sm"
+              className="toggle-button"
+            >
+              {sidebarVisible ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+            </Button>
+            <div>
+              <h1 className="text-xl font-semibold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+                City Explorer
+              </h1>
+              <p className="text-xs text-muted-foreground">Curated places worth visiting</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Admin mode</span>
+              <Switch checked={adminMode} onCheckedChange={setAdminMode} />
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container py-4 grid gap-4 md:grid-cols-[320px_1fr]">
-        <aside>
-          <Card>
-            <CardHeader>
-              <CardTitle>Filters</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <label className="text-sm">City</label>
-                <Select value={selectedCity} onValueChange={(v) => setSelectedCity(v as keyof typeof CITIES)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a city" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(CITIES).map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      <main className="relative h-[calc(100vh-88px)]">
+        {/* Sidebar */}
+        <aside className={`sidebar-panel absolute left-0 top-0 z-30 w-80 h-full ${!sidebarVisible ? 'sidebar-panel--hidden' : ''}`}>
+          <div className="p-6 space-y-6 h-full overflow-y-auto">
+            <Card className="border-0 shadow-none bg-sidebar-background/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  Filters
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium text-sidebar-foreground">City</label>
+                  <Select value={selectedCity} onValueChange={(v) => setSelectedCity(v as keyof typeof CITIES)}>
+                    <SelectTrigger className="bg-sidebar-background border-sidebar-border">
+                      <SelectValue placeholder="Select a city" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(CITIES).map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="grid gap-2">
-                <label className="text-sm">Category</label>
-                <Select value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as Category)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium text-sidebar-foreground">Category</label>
+                  <Select value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as Category)}>
+                    <SelectTrigger className="bg-sidebar-background border-sidebar-border">
+                      <SelectValue placeholder="All categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
 
-          <div className="h-4" />
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Highlighted places ({filteredPlaces.length})</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {filteredPlaces.length === 0 && (
-                <p className="text-sm text-muted-foreground">No places yet. {adminMode ? "Click on the map to add your first one." : ""}</p>
-              )}
-              {filteredPlaces.map((p) => (
-                <button
-                  key={p.id}
-                  className="w-full text-left rounded-md border p-3 hover:bg-muted/50 transition"
-                  onClick={() => setFocus(p.coordinates)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">{p.name}</div>
-                    {p.recommended && <span className="text-xs text-primary">Recommended</span>}
+            <Card className="border-0 shadow-none bg-sidebar-background/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Star className="h-5 w-5 text-primary" />
+                  Places ({filteredPlaces.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {filteredPlaces.length === 0 && (
+                  <div className="text-center py-8">
+                    <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                    <p className="text-sm text-muted-foreground">
+                      No places yet.
+                      {adminMode && (
+                        <span className="block mt-1 text-xs">Click on the map to add your first one.</span>
+                      )}
+                    </p>
                   </div>
-                  <div className="text-xs text-muted-foreground">{p.category} • {"★".repeat(Math.round(p.rating))}</div>
-                  {p.review && <div className="mt-1 text-sm text-muted-foreground">{p.review}</div>}
-                </button>
-              ))}
-            </CardContent>
-          </Card>
+                )}
+                {filteredPlaces.map((p) => (
+                  <div
+                    key={p.id}
+                    className={`place-card ${p.recommended ? 'place-card--recommended' : ''}`}
+                    onClick={() => setFocus(p.coordinates)}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="font-medium text-sidebar-foreground">{p.name}</div>
+                      {p.recommended && (
+                        <div className="flex items-center gap-1 text-xs text-primary font-medium">
+                          <Star className="h-3 w-3 fill-current" />
+                          Recommended
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-xs text-sidebar-foreground/70 mb-1">
+                      {p.category} • {"★".repeat(Math.round(p.rating))} ({p.rating})
+                    </div>
+                    {p.review && (
+                      <div className="text-sm text-sidebar-foreground/80 leading-relaxed">{p.review}</div>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
         </aside>
 
-        <section className="min-h-[60vh] md:min-h-[75vh]">
-          <div className="h-[70vh] md:h-[78vh] rounded-lg border overflow-hidden relative">
+        {/* Map Section */}
+        <section className={`absolute top-0 right-0 h-full transition-all duration-300 ${
+          sidebarVisible ? 'left-80' : 'left-0'
+        }`}>
+          <div className={`h-full map-container ${!sidebarVisible ? 'map-container--fullscreen' : ''} m-4`}>
             <MapView
               center={cityCenter}
               focus={focus}
@@ -171,13 +218,19 @@ const Index = () => {
         </section>
       </main>
 
-      <PlaceForm
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        coords={clickCoords}
-        categories={CATEGORIES.filter((c) => c !== "All") as string[]}
-        onSubmit={handleAddPlace}
-      />
+      {/* Admin Form - positioned in sidebar area */}
+      {formOpen && (
+        <div className="admin-form-overlay">
+          <PlaceForm
+            open={formOpen}
+            onOpenChange={setFormOpen}
+            coords={clickCoords}
+            categories={CATEGORIES.filter((c) => c !== "All") as string[]}
+            onSubmit={handleAddPlace}
+            variant="sidebar"
+          />
+        </div>
+      )}
     </div>
   );
 };

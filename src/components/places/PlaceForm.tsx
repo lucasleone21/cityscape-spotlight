@@ -26,9 +26,10 @@ interface PlaceFormProps {
   coords?: [number, number]; // [lng, lat]
   categories: string[];
   onSubmit: (data: PlaceFormData) => void;
+  variant?: "dialog" | "sidebar";
 }
 
-const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit }: PlaceFormProps) => {
+const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant = "dialog" }: PlaceFormProps) => {
   const [form, setForm] = useState<PlaceFormData>({
     name: "",
     category: categories[0] ?? "Restaurants",
@@ -42,6 +43,103 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit }: PlaceFo
     onSubmit(form);
   };
 
+  // Sidebar variant renders without Dialog wrapper
+  if (variant === "sidebar") {
+    return (
+      <div className="h-full">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2">Add highlighted place</h2>
+          <p className="text-sm text-muted-foreground">
+            Share your review and mark as recommended. Visitors will see these on the map.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {coords && (
+            <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
+              📍 {coords[0].toFixed(5)}, {coords[1].toFixed(5)}
+            </div>
+          )}
+
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Name</label>
+            <Input
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="Place name"
+              required
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Category</label>
+            <Select
+              value={form.category}
+              onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Rating</label>
+            <Select
+              value={String(form.rating)}
+              onValueChange={(v) => setForm((f) => ({ ...f, rating: Number(v) }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select rating" />
+              </SelectTrigger>
+              <SelectContent>
+                {[0,1,2,3,4,5].map((n) => (
+                  <SelectItem key={n} value={String(n)}>{n} {"★".repeat(n)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Review</label>
+            <Textarea
+              value={form.review}
+              onChange={(e) => setForm((f) => ({ ...f, review: e.target.value }))}
+              placeholder="Write a short review..."
+              rows={4}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+            <div className="space-y-1">
+              <div className="text-sm font-medium">Mark as recommended</div>
+              <div className="text-xs text-muted-foreground">Highlighted on the map</div>
+            </div>
+            <Switch
+              checked={form.recommended}
+              onCheckedChange={(v) => setForm((f) => ({ ...f, recommended: v }))}
+            />
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1">
+              Save place
+            </Button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  // Default dialog variant
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>

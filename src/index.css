@@ -42,8 +42,12 @@ All colors MUST be HSL.
     --primary-variant: 222.2 84% 20%;
     --primary-glow: 222.2 84% 65%;
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-surface: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted) / 0.3));
     --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.25);
+    --shadow-soft: 0 4px 20px -2px hsl(var(--foreground) / 0.08);
+    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
     --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -105,6 +109,73 @@ All colors MUST be HSL.
 }
 
 @layer components {
+  /* Enhanced layout components */
+  .app-header {
+    background: var(--gradient-surface);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid hsl(var(--border) / 0.5);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .sidebar-panel {
+    background: hsl(var(--sidebar-background));
+    border-right: 1px solid hsl(var(--sidebar-border));
+    box-shadow: var(--shadow-soft);
+    transition: transform var(--transition-spring), opacity var(--transition-smooth);
+  }
+
+  .sidebar-panel--hidden {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+
+  .map-container {
+    background: hsl(var(--muted) / 0.3);
+    border-radius: calc(var(--radius) * 2);
+    overflow: hidden;
+    box-shadow: var(--shadow-elegant);
+    transition: all var(--transition-smooth);
+  }
+
+  .map-container--fullscreen {
+    border-radius: var(--radius);
+  }
+
+  .place-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    padding: 1rem;
+    transition: all var(--transition-smooth);
+    cursor: pointer;
+  }
+
+  .place-card:hover {
+    background: hsl(var(--accent) / 0.5);
+    border-color: hsl(var(--primary) / 0.3);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .place-card--recommended {
+    border-color: hsl(var(--primary) / 0.4);
+    background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--primary) / 0.02));
+  }
+
+  .toggle-button {
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: 9999px;
+    box-shadow: var(--shadow-soft);
+    transition: all var(--transition-smooth);
+  }
+
+  .toggle-button:hover {
+    background: hsl(var(--accent));
+    border-color: hsl(var(--primary) / 0.3);
+    transform: scale(1.02);
+  }
+
   /* Map marker styles using design system tokens */
   .map-marker {
     width: 16px;
@@ -132,5 +203,21 @@ All colors MUST be HSL.
     place-items: center;
     font-size: 10px;
     color: hsl(var(--primary-foreground));
+  }
+
+  /* Admin form overlay */
+  .admin-form-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 380px;
+    height: 100vh;
+    background: hsl(var(--background) / 0.95);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-elegant);
+    z-index: 50;
+    overflow-y: auto;
+    padding: 1.5rem;
   }
 }
