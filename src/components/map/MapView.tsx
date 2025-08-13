@@ -15,6 +15,7 @@ export type MapMarker = {
 interface MapViewProps {
   center?: [number, number];
   focus?: [number, number];
+  focusTimestamp?: number;
   zoom?: number;
   markers: MapMarker[];
   adminMode?: boolean;
@@ -24,6 +25,7 @@ interface MapViewProps {
 const MapView: React.FC<MapViewProps> = ({
   center,
   focus,
+  focusTimestamp,
   zoom = 3,
   markers,
   adminMode = false,
@@ -32,6 +34,9 @@ const MapView: React.FC<MapViewProps> = ({
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerLayerRef = useRef<LayerGroup | null>(null);
+  const markersInitializedRef = useRef(false);
+  const lastMarkersRef = useRef<MapMarker[]>([]);
+  const lastFocusRef = useRef<[number, number] | undefined>(undefined);
 
   // Initialize map
   useEffect(() => {
@@ -44,10 +49,10 @@ const MapView: React.FC<MapViewProps> = ({
       attributionControl: true,
     });
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      maxZoom: 20,
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
     }).addTo(map);
 
     mapRef.current = map;
@@ -67,12 +72,36 @@ const MapView: React.FC<MapViewProps> = ({
     }
   }, [center]);
 
-  // Focus on specific coordinate
+  // Focus on specific coordinate - NO MORE MAP CENTERING
   useEffect(() => {
     if (mapRef.current && focus) {
-      mapRef.current.flyTo([focus[1], focus[0]] as any, 14, { animate: true });
+      // Just update the focus ref - don't move the map
+      const [lng, lat] = focus;
+      lastFocusRef.current = [lng, lat];
+    } else if (mapRef.current && !focus && center) {
+      // When focus is cleared, return to city center
+      mapRef.current.flyTo([center[1], center[0]], 11, { 
+        animate: true,
+        duration: 1.5
+      });
+      lastFocusRef.current = undefined;
     }
-  }, [focus]);
+  }, [focus, focusTimestamp, center]);
+
+  // Move map to focused location when focus changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focus) return;
+
+    // Move the map to the focused location
+    const [lng, lat] = focus;
+    map.flyTo([lat, lng], 16, { 
+      animate: true,
+      duration: 1.5
+    });
+  }, [focus, focusTimestamp]);
+
+  // Remove the old zoom centering logic - we don't need it anymore
 
   // Admin click handler
   useEffect(() => {
@@ -91,41 +120,102 @@ const MapView: React.FC<MapViewProps> = ({
     };
   }, [adminMode, onMapClick]);
 
-  // Render markers
+  // Render markers - optimized to prevent flickering while maintaining functionality
   useEffect(() => {
     const group = markerLayerRef.current;
     const map = mapRef.current;
     if (!group || !map) return;
 
-    group.clearLayers();
+    // Deep comparison function to check if markers actually changed
+    const markersActuallyChanged = (): boolean => {
+      if (lastMarkersRef.current.length !== markers.length) return true;
+      
+      for (let i = 0; i < markers.length; i++) {
+        const current = markers[i];
+        const last = lastMarkersRef.current[i];
+        
+        if (!last || 
+            last.id !== current.id ||
+            last.coordinates[0] !== current.coordinates[0] ||
+            last.coordinates[1] !== current.coordinates[1] ||
+            last.title !== current.title ||
+            last.rating !== current.rating ||
+            last.recommended !== current.recommended ||
+            last.category !== current.category ||
+            last.review !== current.review) {
+          return true;
+        }
+      }
+      return false;
+    };
 
-    markers.forEach((m) => {
-      const recommended = m.recommended ? " map-marker--recommended" : "";
-      const size = m.recommended ? 32 : 20; // Made bigger: 32px for recommended, 20px for regular
-      const icon = L.divIcon({
-        html: `<div class="map-marker${recommended}"></div>`,
-        className: "",
-        iconSize: [size, size] as [number, number],
-        iconAnchor: [size / 2, size / 2] as [number, number],
-        popupAnchor: [0, -(size / 2)] as [number, number],
+    // Only re-render if markers actually changed in content
+    if (!markersInitializedRef.current || markersActuallyChanged()) {
+      // Store current markers for reuse
+      const existingMarkers = new Map();
+      group.getLayers().forEach((layer: any) => {
+        if (layer.options?.id) {
+          existingMarkers.set(layer.options.id, layer);
+        }
       });
 
-      const popupHtml = `
-        <div style="min-width:200px">
-          <strong>${m.title}</strong>
-          ${typeof m.rating === "number" ? `<div>Rating: ${"★".repeat(Math.round(m.rating))}</div>` : ""}
-          ${m.category ? `<div>Category: ${m.category}</div>` : ""}
-          ${m.review ? `<div style="margin-top:6px;">${m.review}</div>` : ""}
-          ${m.recommended ? `<div style=\"margin-top:4px;\"><em>Recommended</em></div>` : ""}
-        </div>
-      `;
+      // Clear all layers
+      group.clearLayers();
+      
+      // Create or reuse markers
+      markers.forEach((m) => {
+        // Try to reuse existing marker if it's identical
+        const existingMarker = existingMarkers.get(m.id);
+        if (existingMarker && 
+            existingMarker.getLatLng().lat === m.coordinates[1] && 
+            existingMarker.getLatLng().lng === m.coordinates[0]) {
+          // Reuse existing marker - no flickering
+          group.addLayer(existingMarker);
+          return;
+        }
 
-      const marker: LeafletMarker = L.marker([m.coordinates[1], m.coordinates[0]], { icon })
-        .bindPopup(popupHtml)
-        .addTo(group);
+        // Create new marker only if necessary
+        const recommended = m.recommended ? " map-marker--recommended" : "";
+        const category = m.category ? ` map-marker--${m.category.toLowerCase().replace(/\s+/g, '-')}` : "";
+        const size = m.recommended ? 48 : 36;
+        
+        const icon = L.divIcon({
+          html: `<div class="map-marker${recommended}${category}">
+                   <div class="map-marker-inner">
+                     ${m.recommended ? '<span class="map-marker-star">★</span>' : ''}
+                     ${m.category ? `<span class="map-marker-category">${m.category.charAt(0)}</span>` : ''}
+                   </div>
+                 </div>`,
+          className: "custom-marker-icon",
+          iconSize: [size, size] as [number, number],
+          iconAnchor: [size / 2, size / 2] as [number, number],
+          popupAnchor: [0, -(size / 2)] as [number, number],
+        });
 
-      return marker;
-    });
+        const popupHtml = `
+          <div style="min-width:250px; padding: 8px;">
+            <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #1f2937;">
+              ${m.title}
+            </div>
+            ${typeof m.rating === "number" ? `<div style="margin-bottom: 6px; color: #f59e0b;">Rating: ${"★".repeat(Math.round(m.rating))}</div>` : ""}
+            ${m.category ? `<div style="margin-bottom: 6px; color: #6b7280; font-size: 14px;">Category: ${m.category}</div>` : ""}
+            ${m.review ? `<div style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 14px; line-height: 1.4; color: #374151;">${m.review}</div>` : ""}
+            ${m.recommended ? `<div style="margin-top: 8px; padding: 4px 8px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border-radius: 4px; font-size: 12px; font-weight: 500; text-align: center;">⭐ Recommended</div>` : ""}
+          </div>
+        `;
+
+        const marker: LeafletMarker = L.marker([m.coordinates[1], m.coordinates[0]], { 
+          icon,
+          id: m.id
+        })
+          .bindPopup(popupHtml)
+          .addTo(group);
+      });
+
+      // Update refs
+      lastMarkersRef.current = [...markers];
+      markersInitializedRef.current = true;
+    }
   }, [markers]);
 
   return <div ref={mapContainer} className="absolute inset-0 rounded-lg" />;

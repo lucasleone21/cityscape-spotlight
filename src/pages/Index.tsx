@@ -40,11 +40,17 @@ const Index = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [clickCoords, setClickCoords] = useState<[number, number] | undefined>(undefined);
   const [focus, setFocus] = useState<[number, number] | undefined>(undefined);
+  const [focusTimestamp, setFocusTimestamp] = useState<number>(0);
 
   const handleMapClick = (lng: number, lat: number) => {
     if (!adminMode) return;
     setClickCoords([lng, lat]);
     setFormOpen(true);
+  };
+
+  const handleFocusPlace = (coordinates: [number, number]) => {
+    setFocus(coordinates);
+    setFocusTimestamp(Date.now()); // Force update even if coordinates are the same
   };
 
   const handleAddPlace = (data: PlaceFormData) => {
@@ -72,15 +78,17 @@ const Index = () => {
     });
   }, [places, selectedCity, selectedCategory]);
 
-  const markers: MapMarker[] = filteredPlaces.map((p) => ({
-    id: p.id,
-    coordinates: p.coordinates,
-    title: p.name,
-    rating: p.rating,
-    recommended: p.recommended,
-    category: p.category,
-    review: p.review,
-  }));
+  const markers: MapMarker[] = useMemo(() => {
+    return filteredPlaces.map((p) => ({
+      id: p.id,
+      coordinates: p.coordinates,
+      title: p.name,
+      rating: p.rating,
+      recommended: p.recommended,
+      category: p.category,
+      review: p.review,
+    }));
+  }, [filteredPlaces]);
 
   const cityCenter = CITIES[selectedCity]?.center;
 
@@ -163,6 +171,22 @@ const Index = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {focus && (
+                  <div className="mb-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setFocus(undefined);
+                        setFocusTimestamp(0);
+                      }}
+                      className="w-full text-xs"
+                    >
+                      <MapPin className="h-3 w-3 mr-2" />
+                      Return to City Overview
+                    </Button>
+                  </div>
+                )}
                 {filteredPlaces.length === 0 && (
                   <div className="text-center py-8">
                     <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
@@ -177,8 +201,12 @@ const Index = () => {
                 {filteredPlaces.map((p) => (
                   <div
                     key={p.id}
-                    className={`place-card ${p.recommended ? 'place-card--recommended' : ''} cursor-pointer`}
-                    onClick={() => setFocus(p.coordinates)}
+                    className={`place-card ${p.recommended ? 'place-card--recommended' : ''} ${
+                      focus && focus[0] === p.coordinates[0] && focus[1] === p.coordinates[1] 
+                        ? 'place-card--focused' 
+                        : ''
+                    } cursor-pointer transition-all duration-200`}
+                    onClick={() => handleFocusPlace(p.coordinates)}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="font-medium text-sidebar-foreground">{p.name}</div>
@@ -194,6 +222,12 @@ const Index = () => {
                     </div>
                     {p.review && (
                       <div className="text-sm text-sidebar-foreground/80 leading-relaxed">{p.review}</div>
+                    )}
+                    {focus && focus[0] === p.coordinates[0] && focus[1] === p.coordinates[1] && (
+                      <div className="mt-2 text-xs text-primary font-medium flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        Map focused here
+                      </div>
                     )}
                   </div>
                 ))}
@@ -214,10 +248,46 @@ const Index = () => {
             <MapView
               center={cityCenter}
               focus={focus}
+              focusTimestamp={focusTimestamp}
               markers={markers}
               adminMode={adminMode}
               onMapClick={handleMapClick}
             />
+            
+            {/* Map Legend */}
+            <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-3 shadow-lg z-10">
+              <div className="text-xs font-semibold text-gray-700 mb-2">Map Legend</div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 border-2 border-white shadow-sm"></div>
+                  <span className="text-xs text-gray-600">Regular Place</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 border-2 border-white shadow-sm flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold">★</span>
+                  </div>
+                  <span className="text-xs text-gray-600">Recommended</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-red-500 to-red-600 border-2 border-white shadow-sm flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold">R</span>
+                  </div>
+                  <span className="text-xs text-gray-600">Restaurants</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-green-500 to-green-600 border-2 border-white shadow-sm flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold">T</span>
+                  </div>
+                  <span className="text-xs text-gray-600">Tourist Attractions</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 border-2 border-white shadow-sm flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold">H</span>
+                  </div>
+                  <span className="text-xs text-gray-600">Hotels</span>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>

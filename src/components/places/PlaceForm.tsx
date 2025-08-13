@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import React from "react";
 
 export type PlaceFormData = {
   name: string;
@@ -32,14 +32,51 @@ interface PlaceFormProps {
 const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant = "dialog" }: PlaceFormProps) => {
   const [form, setForm] = useState<PlaceFormData>({
     name: "",
-    category: categories[0] ?? "Restaurants",
+    category: "",
     rating: 5,
     review: "",
     recommended: true,
   });
 
+  // Update form category when categories prop changes or when form opens
+  React.useEffect(() => {
+    if (categories.length > 0 && (!form.category || form.category === "")) {
+      setForm(prev => ({ ...prev, category: categories[0] }));
+    }
+  }, [categories, form.category]);
+
+  // Reset form when opening
+  React.useEffect(() => {
+    if (open) {
+      setForm({
+        name: "",
+        category: categories[0] || "",
+        rating: 5,
+        review: "",
+        recommended: true,
+      });
+    }
+  }, [open, categories]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!form.name.trim()) {
+      alert("Please enter a place name");
+      return;
+    }
+    
+    if (!form.category || form.category === "") {
+      alert("Please select a category");
+      return;
+    }
+    
+    if (!form.rating || form.rating < 1 || form.rating > 5) {
+      alert("Please select a valid rating between 1 and 5");
+      return;
+    }
+    
     onSubmit(form);
   };
 
@@ -72,47 +109,54 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
           )}
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Name</label>
+            <label className="text-sm font-medium">
+              Name <span className="text-red-500">*</span>
+            </label>
             <Input
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="Place name"
               required
+              className={!form.name.trim() ? "border-red-300 focus:border-red-500" : ""}
             />
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Category</label>
-            <Select
+            <label className="text-sm font-medium">
+              Category <span className="text-red-500">*</span>
+            </label>
+            <select
               value={form.category}
-              onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
+              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+              required
+              className={`w-full h-10 px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
+                !form.category ? "border-red-300 focus:border-red-500" : "border-input"
+              }`}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="">Select a category</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Rating</label>
-            <Select
-              value={String(form.rating)}
-              onValueChange={(v) => setForm((f) => ({ ...f, rating: Number(v) }))}
+            <label className="text-sm font-medium">
+              Rating <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.rating}
+              onChange={(e) => setForm((f) => ({ ...f, rating: Number(e.target.value) }))}
+              required
+              className="w-full h-10 px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select rating" />
-              </SelectTrigger>
-              <SelectContent>
-                {[0,1,2,3,4,5].map((n) => (
-                  <SelectItem key={n} value={String(n)}>{n} {"★".repeat(n)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="">Select rating</option>
+              {[1,2,3,4,5].map((n) => (
+                <option key={n} value={n}>
+                  {n} {"★".repeat(n)}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid gap-2">
@@ -166,47 +210,54 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
           )}
 
           <div className="grid gap-2">
-            <label className="text-sm">Name</label>
+            <label className="text-sm">
+              Name <span className="text-red-500">*</span>
+            </label>
             <Input
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="Place name"
               required
+              className={!form.name.trim() ? "border-red-300 focus:border-red-500" : ""}
             />
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm">Category</label>
-            <Select
+            <label className="text-sm">
+              Category <span className="text-red-500">*</span>
+            </label>
+            <select
               value={form.category}
-              onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
+              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+              required
+              className={`w-full h-10 px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
+                !form.category ? "border-red-300 focus:border-red-500" : "border-input"
+              }`}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="">Select a category</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm">Rating</label>
-            <Select
-              value={String(form.rating)}
-              onValueChange={(v) => setForm((f) => ({ ...f, rating: Number(v) }))}
+            <label className="text-sm">
+              Rating <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.rating}
+              onChange={(e) => setForm((f) => ({ ...f, rating: Number(e.target.value) }))}
+              required
+              className="w-full h-10 px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select rating" />
-              </SelectTrigger>
-              <SelectContent>
-                {[0,1,2,3,4,5].map((n) => (
-                  <SelectItem key={n} value={String(n)}>{n} {"★".repeat(n)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="">Select rating</option>
+              {[1,2,3,4,5].map((n) => (
+                <option key={n} value={n}>
+                  {n} {"★".repeat(n)}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid gap-2">
