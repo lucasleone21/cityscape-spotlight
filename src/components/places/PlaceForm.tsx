@@ -16,6 +16,7 @@ export type PlaceFormData = {
   category: string;
   rating: number;
   review: string;
+  recommendedBy?: string;
 };
 
 interface PlaceFormProps {
@@ -33,6 +34,7 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
     category: "",
     rating: 5,
     review: "",
+    recommendedBy: "",
   });
 
   // Update form category when categories prop changes or when form opens
@@ -50,6 +52,7 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
         category: categories[0] || "",
         rating: 5,
         review: "",
+        recommendedBy: "",
       });
     }
   }, [open, categories]);
@@ -156,6 +159,20 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
           </div>
 
           <div className="grid gap-2">
+            <label className="text-sm font-medium">Recomendado por</label>
+            <select
+              value={form.recommendedBy}
+              onChange={(e) => setForm((f) => ({ ...f, recommendedBy: e.target.value }))}
+              className="w-full h-10 px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <option value="">Selecionar...</option>
+              <option value="Danilo Carneiro">Danilo Carneiro</option>
+              <option value="Cadu">Cadu</option>
+              <option value="Mohamad Hindi">Mohamad Hindi</option>
+            </select>
+          </div>
+
+          <div className="grid gap-2">
             <label className="text-sm font-medium">Review</label>
             <Textarea
               value={form.review}
@@ -242,6 +259,20 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
                   {n} {"★".repeat(n)}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div className="grid gap-2">
+            <label className="text-sm">Recomendado por</label>
+            <select
+              value={form.recommendedBy}
+              onChange={(e) => setForm((f) => ({ ...f, recommendedBy: e.target.value }))}
+              className="w-full h-10 px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <option value="">Selecionar...</option>
+              <option value="Danilo Carneiro">Danilo Carneiro</option>
+              <option value="Cadu">Cadu</option>
+              <option value="Mohamad Hindi">Mohamad Hindi</option>
             </select>
           </div>
 

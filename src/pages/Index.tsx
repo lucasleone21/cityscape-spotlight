@@ -24,6 +24,7 @@ type Place = {
   rating: number;
   review: string;
   coordinates: [number, number];
+  recommendedBy?: string;
 };
 
 const Index = () => {
@@ -59,6 +60,7 @@ const Index = () => {
       rating: data.rating,
       review: data.review,
       coordinates: clickCoords,
+      recommendedBy: data.recommendedBy,
     };
     setPlaces((p) => [newPlace, ...p]);
     setFormOpen(false);
@@ -81,6 +83,7 @@ const Index = () => {
       rating: p.rating,
       category: p.category,
       review: p.review,
+      recommendedBy: p.recommendedBy,
     }));
   }, [filteredPlaces]);
 

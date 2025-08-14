@@ -7,9 +7,9 @@ export type MapMarker = {
   coordinates: [number, number]; // [lng, lat]
   title: string;
   rating?: number;
-  recommended?: boolean;
   category?: string;
   review?: string;
+  recommendedBy?: string;
 };
 
 interface MapViewProps {
@@ -141,7 +141,7 @@ const MapView: React.FC<MapViewProps> = ({
             last.coordinates[1] !== current.coordinates[1] ||
             last.title !== current.title ||
             last.rating !== current.rating ||
-            last.recommended !== current.recommended ||
+            last.recommendedBy !== current.recommendedBy ||
             last.category !== current.category ||
             last.review !== current.review) {
           return true;
@@ -195,6 +195,8 @@ const MapView: React.FC<MapViewProps> = ({
             </div>
             ${typeof m.rating === "number" ? `<div style="margin-bottom: 6px; color: #f59e0b;">Rating: ${"★".repeat(Math.round(m.rating))}</div>` : ""}
             ${m.category ? `<div style="margin-bottom: 6px; color: #6b7280; font-size: 14px;">Category: ${m.category}</div>` : ""}
+            ${m.recommendedBy ? `<div style="margin-bottom: 8px; color: #6b7280; font-size: 14px;">Recomendado por: ${m.recommendedBy}</div>` : ""}
+            ${m.recommendedBy === "Danilo Carneiro" ? `<div style="margin-bottom: 8px;"><img src="/danilo-carneiro.png" alt="Danilo Carneiro" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"></div>` : ""}
             ${m.review ? `<div style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 14px; line-height: 1.4; color: #374151;">${m.review}</div>` : ""}
           </div>
         `;
