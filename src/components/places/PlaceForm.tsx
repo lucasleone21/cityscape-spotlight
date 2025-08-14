@@ -16,7 +16,6 @@ export type PlaceFormData = {
   category: string;
   rating: number;
   review: string;
-  recommended: boolean;
 };
 
 interface PlaceFormProps {
@@ -34,7 +33,6 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
     category: "",
     rating: 5,
     review: "",
-    recommended: true,
   });
 
   // Update form category when categories prop changes or when form opens
@@ -52,7 +50,6 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
         category: categories[0] || "",
         rating: 5,
         review: "",
-        recommended: true,
       });
     }
   }, [open, categories]);
@@ -168,17 +165,6 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-            <div className="space-y-1">
-              <div className="text-sm font-medium">Mark as recommended</div>
-              <div className="text-xs text-muted-foreground">Highlighted on the map</div>
-            </div>
-            <Switch
-              checked={form.recommended}
-              onCheckedChange={(v) => setForm((f) => ({ ...f, recommended: v }))}
-            />
-          </div>
-
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} className="flex-1">
               Cancel
@@ -266,17 +252,6 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
               onChange={(e) => setForm((f) => ({ ...f, review: e.target.value }))}
               placeholder="Write a short review..."
               rows={4}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="text-sm font-medium">Mark as recommended</div>
-              <div className="text-xs text-muted-foreground">Recommended places appear highlighted on the map.</div>
-            </div>
-            <Switch
-              checked={form.recommended}
-              onCheckedChange={(v) => setForm((f) => ({ ...f, recommended: v }))}
             />
           </div>
 

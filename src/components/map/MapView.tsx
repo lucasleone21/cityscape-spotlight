@@ -175,17 +175,12 @@ const MapView: React.FC<MapViewProps> = ({
           return;
         }
 
-        // Create new marker only if necessary
-        const recommended = m.recommended ? " map-marker--recommended" : "";
-        const category = m.category ? ` map-marker--${m.category.toLowerCase().replace(/\s+/g, '-')}` : "";
-        const size = m.recommended ? 48 : 36;
+        // Create new marker with simple red circle design
+        const size = 32; // All markers same size
         
         const icon = L.divIcon({
-          html: `<div class="map-marker${recommended}${category}">
-                   <div class="map-marker-inner">
-                     ${m.recommended ? '<span class="map-marker-star">★</span>' : ''}
-                     ${m.category ? `<span class="map-marker-category">${m.category.charAt(0)}</span>` : ''}
-                   </div>
+          html: `<div class="map-marker">
+                   <div class="map-marker-inner"></div>
                  </div>`,
           className: "custom-marker-icon",
           iconSize: [size, size] as [number, number],
@@ -201,7 +196,6 @@ const MapView: React.FC<MapViewProps> = ({
             ${typeof m.rating === "number" ? `<div style="margin-bottom: 6px; color: #f59e0b;">Rating: ${"★".repeat(Math.round(m.rating))}</div>` : ""}
             ${m.category ? `<div style="margin-bottom: 6px; color: #6b7280; font-size: 14px;">Category: ${m.category}</div>` : ""}
             ${m.review ? `<div style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 14px; line-height: 1.4; color: #374151;">${m.review}</div>` : ""}
-            ${m.recommended ? `<div style="margin-top: 8px; padding: 4px 8px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border-radius: 4px; font-size: 12px; font-weight: 500; text-align: center;">⭐ Recommended</div>` : ""}
           </div>
         `;
 

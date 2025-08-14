@@ -24,7 +24,6 @@ type Place = {
   rating: number;
   review: string;
   coordinates: [number, number];
-  recommended: boolean;
 };
 
 const Index = () => {
@@ -60,7 +59,6 @@ const Index = () => {
       rating: data.rating,
       review: data.review,
       coordinates: clickCoords,
-      recommended: data.recommended,
     };
     setPlaces((p) => [newPlace, ...p]);
     setFormOpen(false);
@@ -81,7 +79,6 @@ const Index = () => {
       coordinates: p.coordinates,
       title: p.name,
       rating: p.rating,
-      recommended: p.recommended,
       category: p.category,
       review: p.review,
     }));
@@ -198,7 +195,7 @@ const Index = () => {
                 {filteredPlaces.map((p) => (
                   <div
                     key={p.id}
-                    className={`place-card ${p.recommended ? 'place-card--recommended' : ''} ${
+                    className={`place-card ${
                       focus && focus[0] === p.coordinates[0] && focus[1] === p.coordinates[1] 
                         ? 'place-card--focused' 
                         : ''
@@ -207,12 +204,6 @@ const Index = () => {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="font-medium text-sidebar-foreground">{p.name}</div>
-                      {p.recommended && (
-                        <div className="flex items-center gap-1 text-xs text-primary font-medium">
-                          <Star className="h-3 w-3 fill-current" />
-                          Recommended
-                        </div>
-                      )}
                     </div>
                     <div className="text-xs text-sidebar-foreground/70 mb-1">
                       {p.category} • {"★".repeat(Math.round(p.rating))} ({p.rating})
