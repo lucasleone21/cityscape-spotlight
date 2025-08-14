@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import React from "react";
 
 export type PlaceFormData = {
   name: string;
@@ -39,14 +38,14 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
   });
 
   // Update form category when categories prop changes or when form opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (categories.length > 0 && (!form.category || form.category === "")) {
       setForm(prev => ({ ...prev, category: categories[0] }));
     }
   }, [categories, form.category]);
 
   // Reset form when opening
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
       setForm({
         name: "",
