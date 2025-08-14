@@ -10,12 +10,9 @@ import { PanelLeftClose, PanelLeftOpen, MapPin, Star } from "lucide-react";
 
 const CITIES: Record<string, { center: [number, number]; zoom: number }> = {
   "São Paulo": { center: [-46.6333, -23.5505], zoom: 11 },
-  "New York": { center: [-74.0060, 40.7128], zoom: 11 },
-  Bali: { center: [115.1889, -8.4095], zoom: 10 },
-  London: { center: [-0.1276, 51.5072], zoom: 11 },
 };
 
-const CATEGORIES = ["All", "Restaurants", "Tourist Attractions", "Hotels"] as const;
+const CATEGORIES = ["All", "Japanese", "Brazilian", "Fast Food", "Italian", "Chinese", "Mexican", "Indian", "Mediterranean", "Desserts"] as const;
 
 type Category = typeof CATEGORIES[number];
 
@@ -32,7 +29,7 @@ type Place = {
 
 const Index = () => {
   const [adminMode, setAdminMode] = useState(false);
-  const [selectedCity, setSelectedCity] = useState<keyof typeof CITIES>("New York");
+  const [selectedCity, setSelectedCity] = useState<keyof typeof CITIES>("São Paulo");
   const [selectedCategory, setSelectedCategory] = useState<Category>("All");
   const [sidebarVisible, setSidebarVisible] = useState(true);
 
@@ -224,7 +221,7 @@ const Index = () => {
                       <div className="text-sm text-sidebar-foreground/80 leading-relaxed">{p.review}</div>
                     )}
                     {focus && focus[0] === p.coordinates[0] && focus[1] === p.coordinates[1] && (
-                      <div className="mt-2 text-xs text-primary font-medium flex items-center gap-1">
+                      <div className="mt-2 text-xs text-red-600 font-medium flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
                         Map focused here
                       </div>
@@ -254,40 +251,7 @@ const Index = () => {
               onMapClick={handleMapClick}
             />
             
-            {/* Map Legend */}
-            <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg p-3 shadow-lg z-10">
-              <div className="text-xs font-semibold text-gray-700 mb-2">Map Legend</div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 border-2 border-white shadow-sm"></div>
-                  <span className="text-xs text-gray-600">Regular Place</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 border-2 border-white shadow-sm flex items-center justify-center">
-                    <span className="text-[8px] text-white font-bold">★</span>
-                  </div>
-                  <span className="text-xs text-gray-600">Recommended</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-red-500 to-red-600 border-2 border-white shadow-sm flex items-center justify-center">
-                    <span className="text-[8px] text-white font-bold">R</span>
-                  </div>
-                  <span className="text-xs text-gray-600">Restaurants</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-green-500 to-green-600 border-2 border-white shadow-sm flex items-center justify-center">
-                    <span className="text-[8px] text-white font-bold">T</span>
-                  </div>
-                  <span className="text-xs text-gray-600">Tourist Attractions</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 border-2 border-white shadow-sm flex items-center justify-center">
-                    <span className="text-[8px] text-white font-bold">H</span>
-                  </div>
-                  <span className="text-xs text-gray-600">Hotels</span>
-                </div>
-              </div>
-            </div>
+
           </div>
         </section>
       </main>
