@@ -81,7 +81,8 @@ const MapView: React.FC<MapViewProps> = ({
       lastFocusRef.current = [lng, lat];
     } else if (mapRef.current && !focus && center) {
       // When focus is cleared, return to city center
-      mapRef.current.flyTo([center[1], center[0]], 11, { 
+      // valor 13 mostra o quao longe devemos ir quando clicamos em Return to City Overview
+      mapRef.current.flyTo([center[1], center[0]], 13, { 
         animate: true,
         duration: 1.5
       });
@@ -96,7 +97,8 @@ const MapView: React.FC<MapViewProps> = ({
 
     // Move the map to the focused location
     const [lng, lat] = focus;
-    map.flyTo([lat, lng], 16, { 
+    // valor 19 mostra o quao perto deve chegar quando clicamos no lugar marcado na sidebar
+    map.flyTo([lat, lng], 19, { 
       animate: true,
       duration: 1.5
     });
