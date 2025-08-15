@@ -147,7 +147,10 @@ const MapView: React.FC<MapViewProps> = ({
             last.rating !== current.rating ||
             last.recommendedBy !== current.recommendedBy ||
             last.category !== current.category ||
-            last.review !== current.review) {
+            last.review !== current.review ||
+            // Also check if admin callbacks changed
+            (!!last.onEdit) !== (!!current.onEdit) ||
+            (!!last.onDelete) !== (!!current.onDelete)) {
           return true;
         }
       }
@@ -257,8 +260,16 @@ const MapView: React.FC<MapViewProps> = ({
           .addTo(group);
       });
 
-      // Update refs
-      lastMarkersRef.current = [...markers];
+      // Update refs - store markers without the callback functions for comparison
+      lastMarkersRef.current = markers.map(m => ({
+        id: m.id,
+        coordinates: m.coordinates,
+        title: m.title,
+        rating: m.rating,
+        category: m.category,
+        review: m.review,
+        recommendedBy: m.recommendedBy
+      }));
       markersInitializedRef.current = true;
     }
   }, [markers]);

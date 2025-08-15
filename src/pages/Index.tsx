@@ -64,6 +64,10 @@ const Index = () => {
       };
       setPlaces((p) => p.map(place => place.id === editingPlace.id ? updatedPlace : place));
       setEditingPlace(undefined);
+      // Force focus refresh to update map popup
+      if (focus && focus[0] === editingPlace.coordinates[0] && focus[1] === editingPlace.coordinates[1]) {
+        setFocusTimestamp(Date.now());
+      }
       toast({ title: "Place updated", description: `${data.name} has been updated.` });
     } else {
       // Add new place
@@ -90,7 +94,13 @@ const Index = () => {
   };
 
   const handleDeletePlace = (placeId: string) => {
+    const deletingPlace = places.find(p => p.id === placeId);
     setPlaces((p) => p.filter(place => place.id !== placeId));
+    // Clear focus if we're deleting the focused place
+    if (deletingPlace && focus && focus[0] === deletingPlace.coordinates[0] && focus[1] === deletingPlace.coordinates[1]) {
+      setFocus(undefined);
+      setFocusTimestamp(0);
+    }
     toast({ title: "Place deleted", description: "Place has been removed." });
   };
 
@@ -114,7 +124,7 @@ const Index = () => {
       onEdit: adminMode ? () => handleEditPlace(p) : undefined,
       onDelete: adminMode ? () => handleDeletePlace(p.id) : undefined,
     }));
-  }, [filteredPlaces, adminMode]);
+  }, [filteredPlaces, adminMode, handleEditPlace, handleDeletePlace]);
 
   const cityCenter = CITIES[selectedCity]?.center;
 
