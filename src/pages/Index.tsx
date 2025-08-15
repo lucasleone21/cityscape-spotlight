@@ -121,8 +121,9 @@ const Index = () => {
       category: p.category,
       review: p.review,
       recommendedBy: p.recommendedBy,
-      onEdit: adminMode ? () => handleEditPlace(p) : undefined,
-      onDelete: adminMode ? () => handleDeletePlace(p.id) : undefined,
+      // Only add callbacks when admin mode is explicitly true
+      onEdit: adminMode === true ? () => handleEditPlace(p) : undefined,
+      onDelete: adminMode === true ? () => handleDeletePlace(p.id) : undefined,
     }));
   }, [filteredPlaces, adminMode, handleEditPlace, handleDeletePlace]);
 

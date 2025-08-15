@@ -212,8 +212,8 @@ const MapView: React.FC<MapViewProps> = ({
           ${m.review ? `<div style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 14px; line-height: 1.4; color: #374151;">${m.review}</div>` : ""}
         `;
 
-        // Add admin buttons if in admin mode
-        if (adminMode && (m.onEdit || m.onDelete)) {
+        // Add admin buttons only if in admin mode AND callbacks exist
+        if (adminMode === true && (m.onEdit || m.onDelete)) {
           const buttonContainer = document.createElement('div');
           buttonContainer.style.display = 'flex';
           buttonContainer.style.gap = '8px';
