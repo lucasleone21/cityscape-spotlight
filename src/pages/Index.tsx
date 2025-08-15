@@ -6,7 +6,13 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { PanelLeftClose, PanelLeftOpen, MapPin, Star, Edit, Trash2 } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, MapPin, Star, Edit, Trash2, Users } from "lucide-react";
+
+const CREATOR_IMAGES: Record<string, string> = {
+  "Danilo Carneiro": "/danilo-carneiro.png",
+  "Cadu": "/cadu.png",
+  "Mohamad Hindi": "/mohamad-hindi.png",
+};
 
 const CITIES: Record<string, { center: [number, number]; zoom: number }> = {
   "São Paulo": { center: [-46.6333, -23.5505], zoom: 11 },
@@ -31,6 +37,7 @@ const Index = () => {
   const [adminMode, setAdminMode] = useState(false);
   const [selectedCity, setSelectedCity] = useState<keyof typeof CITIES>("São Paulo");
   const [selectedCategory, setSelectedCategory] = useState<Category>("All");
+  const [selectedCreator, setSelectedCreator] = useState<string | "All">("All");
   const [sidebarVisible, setSidebarVisible] = useState(true);
 
   const [places, setPlaces] = useState<Place[]>([]);
@@ -39,6 +46,23 @@ const Index = () => {
   const [focus, setFocus] = useState<[number, number] | undefined>(undefined);
   const [focusTimestamp, setFocusTimestamp] = useState<number>(0);
   const [editingPlace, setEditingPlace] = useState<Place | undefined>(undefined);
+
+
+
+  const handleCreatorClick = (creatorName: string) => {
+  // Se o criador clicado já for o selecionado, limpa o filtro (volta para "All")
+  // Senão, define o criador clicado como o filtro ativo.
+  setSelectedCreator((currentCreator) => 
+    currentCreator === creatorName ? "All" : creatorName
+    );
+  };
+
+  const creators = useMemo(() => {
+      const creatorNames = places
+        .map(p => p.recommendedBy)
+        .filter((name): name is string => !!name);
+      return [...new Set(creatorNames)];
+  }, [places]);
 
   const handleMapClick = (lng: number, lat: number) => {
     if (!adminMode) return;
@@ -108,9 +132,10 @@ const Index = () => {
     return places.filter((p) => {
       const byCity = p.city === selectedCity;
       const byCategory = selectedCategory === "All" || p.category === selectedCategory;
-      return byCity && byCategory;
+      const byCreator = selectedCreator === "All" || p.recommendedBy === selectedCreator;
+      return byCity && byCategory && byCreator;
     });
-  }, [places, selectedCity, selectedCategory]);
+  }, [places, selectedCity, selectedCategory, selectedCreator]);
 
   const markers: MapMarker[] = useMemo(() => {
     return filteredPlaces.map((p) => ({
@@ -199,6 +224,34 @@ const Index = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <Card className="border-0 shadow-none bg-sidebar-background/50">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Users className="h-5 w-5 text-primary" />
+                      Creators
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-3">
+                      {/* Imagens dos Criadores */}
+                      {creators.map((creator) => (
+                        <img
+                          key={creator}
+                          src={CREATOR_IMAGES[creator]}
+                          alt={creator}
+                          onClick={() => handleCreatorClick(creator)}
+                          className={`w-14 h-14 rounded-full object-cover cursor-pointer transition-all border-2 ${
+                            selectedCreator === creator
+                              ? 'border-primary opacity-100'
+                              : 'border-transparent hover:opacity-75'
+                          }`}
+                          title={creator} // Mostra o nome ao passar o mouse
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
 
             <Card className="border-0 shadow-none bg-sidebar-background/50">
               <CardHeader className="pb-4">

@@ -38,6 +38,7 @@ const MapView: React.FC<MapViewProps> = ({
   const markerLayerRef = useRef<LayerGroup | null>(null);
   const markersInitializedRef = useRef(false);
   const lastMarkersRef = useRef<MapMarker[]>([]);
+  const lastAdminModeRef = useRef(adminMode);
   const lastFocusRef = useRef<[number, number] | undefined>(undefined);
 
   // Initialize map
@@ -126,73 +127,197 @@ const MapView: React.FC<MapViewProps> = ({
   }, [adminMode, onMapClick]);
 
   // Render markers - optimized to prevent flickering while maintaining functionality
-  useEffect(() => {
+  // useEffect(() => {
+  //   const group = markerLayerRef.current;
+  //   const map = mapRef.current;
+  //   if (!group || !map) return;
+
+  //   // Deep comparison function to check if markers actually changed
+  //   const markersActuallyChanged = (): boolean => {
+  //     if (lastMarkersRef.current.length !== markers.length) return true;
+      
+  //     for (let i = 0; i < markers.length; i++) {
+  //       const current = markers[i];
+  //       const last = lastMarkersRef.current[i];
+        
+  //       if (!last || 
+  //           last.id !== current.id ||
+  //           last.coordinates[0] !== current.coordinates[0] ||
+  //           last.coordinates[1] !== current.coordinates[1] ||
+  //           last.title !== current.title ||
+  //           last.rating !== current.rating ||
+  //           last.recommendedBy !== current.recommendedBy ||
+  //           last.category !== current.category ||
+  //           last.review !== current.review ||
+  //           // Also check if admin callbacks changed
+  //           (!!last.onEdit) !== (!!current.onEdit) ||
+  //           (!!last.onDelete) !== (!!current.onDelete)) {
+  //         return true;
+  //       }
+  //     }
+  //     return false;
+  //   };
+
+  //   // Only re-render if markers actually changed in content
+  //   if (!markersInitializedRef.current || markersActuallyChanged()) {
+  //     // Store current markers for reuse
+  //     const existingMarkers = new Map();
+  //     group.getLayers().forEach((layer: any) => {
+  //       if (layer.options?.id) {
+  //         existingMarkers.set(layer.options.id, layer);
+  //       }
+  //     });
+
+  //     // Clear all layers
+  //     group.clearLayers();
+      
+  //     // Create or reuse markers
+  //     markers.forEach((m) => {
+  //       // Try to reuse existing marker if it's identical
+  //       const existingMarker = existingMarkers.get(m.id);
+  //       if (existingMarker && 
+  //           existingMarker.getLatLng().lat === m.coordinates[1] && 
+  //           existingMarker.getLatLng().lng === m.coordinates[0]) {
+  //         // Reuse existing marker - no flickering
+  //         group.addLayer(existingMarker);
+  //         return;
+  //       }
+
+  //       // Create new marker with simple red circle design
+  //       const size = 32; // All markers same size
+        
+  //       const icon = L.divIcon({
+  //         html: `<div class="map-marker">
+  //                  <div class="map-marker-inner"></div>
+  //                </div>`,
+  //         className: "custom-marker-icon",
+  //         iconSize: [size, size] as [number, number],
+  //         iconAnchor: [size / 2, size / 2] as [number, number],
+  //         popupAnchor: [0, -(size / 2)] as [number, number],
+  //       });
+
+  //       const popupContent = document.createElement('div');
+  //       popupContent.style.minWidth = '250px';
+  //       popupContent.style.padding = '8px';
+        
+  //       popupContent.innerHTML = `
+  //         <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #1f2937;">
+  //           ${m.title}
+  //         </div>
+  //         ${typeof m.rating === "number" ? `<div style="margin-bottom: 6px; color: #f59e0b;">Rating: ${"★".repeat(Math.round(m.rating))}</div>` : ""}
+  //         ${m.category ? `<div style="margin-bottom: 6px; color: #6b7280; font-size: 14px;">Category: ${m.category}</div>` : ""}
+  //         ${m.recommendedBy ? `<div style="margin-bottom: 8px; color: #6b7280; font-size: 14px;">Recomendado por: ${m.recommendedBy}</div>` : ""}
+  //         ${m.recommendedBy === "Danilo Carneiro" ? `<div style="margin-bottom: 8px;"><img src="/danilo-carneiro.png" alt="Danilo Carneiro" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"></div>` : ""}
+  //         ${m.recommendedBy === "Cadu" ? `<div style="margin-bottom: 8px;"><img src="/cadu.png" alt="Cadu" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"></div>` : ""}
+  //         ${m.recommendedBy === "Mohamad Hindi" ? `<div style="margin-bottom: 8px;"><img src="/mohamad-hindi.png" alt="Mohamad Hindi" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"></div>` : ""}
+  //         ${m.review ? `<div style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 14px; line-height: 1.4; color: #374151;">${m.review}</div>` : ""}
+  //       `;
+
+  //       // Add admin buttons only if in admin mode AND callbacks exist
+  //       if (adminMode === true && (m.onEdit || m.onDelete)) {
+  //         const buttonContainer = document.createElement('div');
+  //         buttonContainer.style.display = 'flex';
+  //         buttonContainer.style.gap = '8px';
+  //         buttonContainer.style.marginTop = '12px';
+  //         buttonContainer.style.paddingTop = '12px';
+  //         buttonContainer.style.borderTop = '1px solid #e5e7eb';
+
+  //         if (m.onEdit) {
+  //           const editButton = document.createElement('button');
+  //           editButton.innerHTML = '✏️ Edit';
+  //           editButton.style.cssText = 'flex: 1; padding: 6px 12px; font-size: 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; color: #374151;';
+  //           editButton.addEventListener('click', m.onEdit);
+  //           editButton.addEventListener('mouseenter', () => {
+  //             editButton.style.background = '#e5e7eb';
+  //           });
+  //           editButton.addEventListener('mouseleave', () => {
+  //             editButton.style.background = '#f3f4f6';
+  //           });
+  //           buttonContainer.appendChild(editButton);
+  //         }
+
+  //         if (m.onDelete) {
+  //           const deleteButton = document.createElement('button');
+  //           deleteButton.innerHTML = '🗑️ Delete';
+  //           deleteButton.style.cssText = 'flex: 1; padding: 6px 12px; font-size: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; cursor: pointer; color: #dc2626;';
+  //           deleteButton.addEventListener('click', m.onDelete);
+  //           deleteButton.addEventListener('mouseenter', () => {
+  //             deleteButton.style.background = '#fee2e2';
+  //           });
+  //           deleteButton.addEventListener('mouseleave', () => {
+  //             deleteButton.style.background = '#fef2f2';
+  //           });
+  //           buttonContainer.appendChild(deleteButton);
+  //         }
+
+  //         popupContent.appendChild(buttonContainer);
+  //       }
+
+  //       const marker: LeafletMarker = L.marker([m.coordinates[1], m.coordinates[0]], { 
+  //         icon,
+  //         id: m.id
+  //       })
+  //         .bindPopup(popupContent)
+  //         .addTo(group);
+  //     });
+
+  //     // Update refs - store markers without the callback functions for comparison
+  //     lastMarkersRef.current = markers.map(m => ({
+  //       id: m.id,
+  //       coordinates: m.coordinates,
+  //       title: m.title,
+  //       rating: m.rating,
+  //       category: m.category,
+  //       review: m.review,
+  //       recommendedBy: m.recommendedBy
+  //     }));
+  //     markersInitializedRef.current = true;
+  //   }
+  // }, [markers, adminMode]);
+
+// SUBSTITUA O SEU ANTIGO useEffect POR ESTE
+useEffect(() => {
     const group = markerLayerRef.current;
     const map = mapRef.current;
     if (!group || !map) return;
 
-    // Deep comparison function to check if markers actually changed
-    const markersActuallyChanged = (): boolean => {
-      if (lastMarkersRef.current.length !== markers.length) return true;
-      
-      for (let i = 0; i < markers.length; i++) {
-        const current = markers[i];
-        const last = lastMarkersRef.current[i];
-        
-        if (!last || 
-            last.id !== current.id ||
-            last.coordinates[0] !== current.coordinates[0] ||
-            last.coordinates[1] !== current.coordinates[1] ||
-            last.title !== current.title ||
-            last.rating !== current.rating ||
-            last.recommendedBy !== current.recommendedBy ||
-            last.category !== current.category ||
-            last.review !== current.review ||
-            // Also check if admin callbacks changed
-            (!!last.onEdit) !== (!!current.onEdit) ||
-            (!!last.onDelete) !== (!!current.onDelete)) {
-          return true;
-        }
+    // A nova função verifica se os marcadores OU o adminMode mudaram.
+    const havePropsChanged = () => {
+      // 1. Se o modo admin mudou, precisamos redesenhar.
+      if (lastAdminModeRef.current !== adminMode) {
+        return true;
       }
+
+      // 2. Se o número de marcadores mudou, redesenhar.
+      if (lastMarkersRef.current.length !== markers.length) {
+        return true;
+      }
+
+      // 3. Compara cada marcador para ver se algum dado mudou.
+      // Usar JSON.stringify é uma forma simples e eficaz para este caso.
+      // Ele ignora as funções (onEdit, onDelete), o que é bom para a comparação de dados.
+      const simplifiedLastMarkers = lastMarkersRef.current.map(m => ({...m, onEdit: undefined, onDelete: undefined}));
+      const simplifiedCurrentMarkers = markers.map(m => ({...m, onEdit: undefined, onDelete: undefined}));
+
+      if (JSON.stringify(simplifiedLastMarkers) !== JSON.stringify(simplifiedCurrentMarkers)) {
+        return true;
+      }
+
       return false;
     };
 
-    // Only re-render if markers actually changed in content
-    if (!markersInitializedRef.current || markersActuallyChanged()) {
-      // Store current markers for reuse
-      const existingMarkers = new Map();
-      group.getLayers().forEach((layer: any) => {
-        if (layer.options?.id) {
-          existingMarkers.set(layer.options.id, layer);
-        }
-      });
-
-      // Clear all layers
+    // Só executa a renderização completa se for a primeira vez ou se algo mudou.
+    if (!markersInitializedRef.current || havePropsChanged()) {
       group.clearLayers();
-      
-      // Create or reuse markers
-      markers.forEach((m) => {
-        // Try to reuse existing marker if it's identical
-        const existingMarker = existingMarkers.get(m.id);
-        if (existingMarker && 
-            existingMarker.getLatLng().lat === m.coordinates[1] && 
-            existingMarker.getLatLng().lng === m.coordinates[0]) {
-          // Reuse existing marker - no flickering
-          group.addLayer(existingMarker);
-          return;
-        }
 
-        // Create new marker with simple red circle design
-        const size = 32; // All markers same size
-        
+      markers.forEach((m) => {
+        const size = 32;
         const icon = L.divIcon({
-          html: `<div class="map-marker">
-                   <div class="map-marker-inner"></div>
-                 </div>`,
+          html: `<div class="map-marker"><div class="map-marker-inner"></div></div>`,
           className: "custom-marker-icon",
-          iconSize: [size, size] as [number, number],
-          iconAnchor: [size / 2, size / 2] as [number, number],
-          popupAnchor: [0, -(size / 2)] as [number, number],
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          popupAnchor: [0, -(size / 2)],
         });
 
         const popupContent = document.createElement('div');
@@ -212,26 +337,16 @@ const MapView: React.FC<MapViewProps> = ({
           ${m.review ? `<div style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 14px; line-height: 1.4; color: #374151;">${m.review}</div>` : ""}
         `;
 
-        // Add admin buttons only if in admin mode AND callbacks exist
-        if (adminMode === true && (m.onEdit || m.onDelete)) {
+        // A condição para mostrar os botões agora funciona corretamente.
+        if (adminMode && (m.onEdit || m.onDelete)) {
           const buttonContainer = document.createElement('div');
-          buttonContainer.style.display = 'flex';
-          buttonContainer.style.gap = '8px';
-          buttonContainer.style.marginTop = '12px';
-          buttonContainer.style.paddingTop = '12px';
-          buttonContainer.style.borderTop = '1px solid #e5e7eb';
+          buttonContainer.style.cssText = 'display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;';
 
           if (m.onEdit) {
             const editButton = document.createElement('button');
             editButton.innerHTML = '✏️ Edit';
             editButton.style.cssText = 'flex: 1; padding: 6px 12px; font-size: 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; color: #374151;';
-            editButton.addEventListener('click', m.onEdit);
-            editButton.addEventListener('mouseenter', () => {
-              editButton.style.background = '#e5e7eb';
-            });
-            editButton.addEventListener('mouseleave', () => {
-              editButton.style.background = '#f3f4f6';
-            });
+            editButton.addEventListener('click', () => m.onEdit && m.onEdit());
             buttonContainer.appendChild(editButton);
           }
 
@@ -239,40 +354,27 @@ const MapView: React.FC<MapViewProps> = ({
             const deleteButton = document.createElement('button');
             deleteButton.innerHTML = '🗑️ Delete';
             deleteButton.style.cssText = 'flex: 1; padding: 6px 12px; font-size: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; cursor: pointer; color: #dc2626;';
-            deleteButton.addEventListener('click', m.onDelete);
-            deleteButton.addEventListener('mouseenter', () => {
-              deleteButton.style.background = '#fee2e2';
-            });
-            deleteButton.addEventListener('mouseleave', () => {
-              deleteButton.style.background = '#fef2f2';
-            });
+            deleteButton.addEventListener('click', () => m.onDelete && m.onDelete());
             buttonContainer.appendChild(deleteButton);
           }
 
           popupContent.appendChild(buttonContainer);
         }
 
-        const marker: LeafletMarker = L.marker([m.coordinates[1], m.coordinates[0]], { 
+        L.marker([m.coordinates[1], m.coordinates[0]], { 
           icon,
           id: m.id
         })
-          .bindPopup(popupContent)
-          .addTo(group);
+        .bindPopup(popupContent)
+        .addTo(group);
       });
 
-      // Update refs - store markers without the callback functions for comparison
-      lastMarkersRef.current = markers.map(m => ({
-        id: m.id,
-        coordinates: m.coordinates,
-        title: m.title,
-        rating: m.rating,
-        category: m.category,
-        review: m.review,
-        recommendedBy: m.recommendedBy
-      }));
+      // Atualiza as refs com os últimos valores que foram renderizados.
+      lastMarkersRef.current = markers;
+      lastAdminModeRef.current = adminMode;
       markersInitializedRef.current = true;
     }
-  }, [markers]);
+  }, [markers, adminMode]); // A dependência de 'adminMode' continua importante
 
   return <div ref={mapContainer} className="absolute inset-0 rounded-lg" />;
 };
