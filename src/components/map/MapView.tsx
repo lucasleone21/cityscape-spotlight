@@ -10,6 +10,8 @@ export type MapMarker = {
   category?: string;
   review?: string;
   recommendedBy?: string;
+  onEdit?: () => void;
+  onDelete?: () => void;
 };
 
 interface MapViewProps {
@@ -190,26 +192,68 @@ const MapView: React.FC<MapViewProps> = ({
           popupAnchor: [0, -(size / 2)] as [number, number],
         });
 
-        const popupHtml = `
-          <div style="min-width:250px; padding: 8px;">
-            <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #1f2937;">
-              ${m.title}
-            </div>
-            ${typeof m.rating === "number" ? `<div style="margin-bottom: 6px; color: #f59e0b;">Rating: ${"★".repeat(Math.round(m.rating))}</div>` : ""}
-            ${m.category ? `<div style="margin-bottom: 6px; color: #6b7280; font-size: 14px;">Category: ${m.category}</div>` : ""}
-            ${m.recommendedBy ? `<div style="margin-bottom: 8px; color: #6b7280; font-size: 14px;">Recomendado por: ${m.recommendedBy}</div>` : ""}
-            ${m.recommendedBy === "Danilo Carneiro" ? `<div style="margin-bottom: 8px;"><img src="/danilo-carneiro.png" alt="Danilo Carneiro" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"></div>` : ""}
-            ${m.recommendedBy === "Cadu" ? `<div style="margin-bottom: 8px;"><img src="/cadu.png" alt="Cadu" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"></div>` : ""}
-            ${m.recommendedBy === "Mohamad Hindi" ? `<div style="margin-bottom: 8px;"><img src="/mohamad-hindi.png" alt="Mohamad Hindi" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"></div>` : ""}
-            ${m.review ? `<div style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 14px; line-height: 1.4; color: #374151;">${m.review}</div>` : ""}
+        const popupContent = document.createElement('div');
+        popupContent.style.minWidth = '250px';
+        popupContent.style.padding = '8px';
+        
+        popupContent.innerHTML = `
+          <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #1f2937;">
+            ${m.title}
           </div>
+          ${typeof m.rating === "number" ? `<div style="margin-bottom: 6px; color: #f59e0b;">Rating: ${"★".repeat(Math.round(m.rating))}</div>` : ""}
+          ${m.category ? `<div style="margin-bottom: 6px; color: #6b7280; font-size: 14px;">Category: ${m.category}</div>` : ""}
+          ${m.recommendedBy ? `<div style="margin-bottom: 8px; color: #6b7280; font-size: 14px;">Recomendado por: ${m.recommendedBy}</div>` : ""}
+          ${m.recommendedBy === "Danilo Carneiro" ? `<div style="margin-bottom: 8px;"><img src="/danilo-carneiro.png" alt="Danilo Carneiro" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"></div>` : ""}
+          ${m.recommendedBy === "Cadu" ? `<div style="margin-bottom: 8px;"><img src="/cadu.png" alt="Cadu" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"></div>` : ""}
+          ${m.recommendedBy === "Mohamad Hindi" ? `<div style="margin-bottom: 8px;"><img src="/mohamad-hindi.png" alt="Mohamad Hindi" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"></div>` : ""}
+          ${m.review ? `<div style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 14px; line-height: 1.4; color: #374151;">${m.review}</div>` : ""}
         `;
+
+        // Add admin buttons if in admin mode
+        if (adminMode && (m.onEdit || m.onDelete)) {
+          const buttonContainer = document.createElement('div');
+          buttonContainer.style.display = 'flex';
+          buttonContainer.style.gap = '8px';
+          buttonContainer.style.marginTop = '12px';
+          buttonContainer.style.paddingTop = '12px';
+          buttonContainer.style.borderTop = '1px solid #e5e7eb';
+
+          if (m.onEdit) {
+            const editButton = document.createElement('button');
+            editButton.innerHTML = '✏️ Edit';
+            editButton.style.cssText = 'flex: 1; padding: 6px 12px; font-size: 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; color: #374151;';
+            editButton.addEventListener('click', m.onEdit);
+            editButton.addEventListener('mouseenter', () => {
+              editButton.style.background = '#e5e7eb';
+            });
+            editButton.addEventListener('mouseleave', () => {
+              editButton.style.background = '#f3f4f6';
+            });
+            buttonContainer.appendChild(editButton);
+          }
+
+          if (m.onDelete) {
+            const deleteButton = document.createElement('button');
+            deleteButton.innerHTML = '🗑️ Delete';
+            deleteButton.style.cssText = 'flex: 1; padding: 6px 12px; font-size: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; cursor: pointer; color: #dc2626;';
+            deleteButton.addEventListener('click', m.onDelete);
+            deleteButton.addEventListener('mouseenter', () => {
+              deleteButton.style.background = '#fee2e2';
+            });
+            deleteButton.addEventListener('mouseleave', () => {
+              deleteButton.style.background = '#fef2f2';
+            });
+            buttonContainer.appendChild(deleteButton);
+          }
+
+          popupContent.appendChild(buttonContainer);
+        }
 
         const marker: LeafletMarker = L.marker([m.coordinates[1], m.coordinates[0]], { 
           icon,
           id: m.id
         })
-          .bindPopup(popupHtml)
+          .bindPopup(popupContent)
           .addTo(group);
       });
 

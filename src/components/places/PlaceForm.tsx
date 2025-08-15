@@ -26,9 +26,16 @@ interface PlaceFormProps {
   categories: string[];
   onSubmit: (data: PlaceFormData) => void;
   variant?: "dialog" | "sidebar";
+  initialData?: {
+    name: string;
+    category: string;
+    rating: number;
+    review: string;
+    recommendedBy?: string;
+  };
 }
 
-const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant = "dialog" }: PlaceFormProps) => {
+const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant = "dialog", initialData }: PlaceFormProps) => {
   const [form, setForm] = useState<PlaceFormData>({
     name: "",
     category: "",
@@ -44,18 +51,30 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
     }
   }, [categories, form.category]);
 
-  // Reset form when opening
+  // Reset form when opening or set initial data for editing
   useEffect(() => {
     if (open) {
-      setForm({
-        name: "",
-        category: categories[0] || "",
-        rating: 5,
-        review: "",
-        recommendedBy: "",
-      });
+      if (initialData) {
+        // Editing mode - populate with existing data
+        setForm({
+          name: initialData.name,
+          category: initialData.category,
+          rating: initialData.rating,
+          review: initialData.review,
+          recommendedBy: initialData.recommendedBy || "",
+        });
+      } else {
+        // Adding mode - reset form
+        setForm({
+          name: "",
+          category: categories[0] || "",
+          rating: 5,
+          review: "",
+          recommendedBy: "",
+        });
+      }
     }
-  }, [open, categories]);
+  }, [open, categories, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +104,7 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
       <div className="h-full">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-semibold">Add highlighted place</h2>
+            <h2 className="text-xl font-semibold">{initialData ? 'Edit place' : 'Add highlighted place'}</h2>
             <Button
               variant="ghost"
               size="sm"
@@ -187,7 +206,7 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
               Cancel
             </Button>
             <Button type="submit" className="flex-1">
-              Save place
+              {initialData ? 'Update place' : 'Save place'}
             </Button>
           </div>
         </form>
@@ -200,7 +219,7 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add a highlighted place</DialogTitle>
+          <DialogTitle>{initialData ? 'Edit place' : 'Add a highlighted place'}</DialogTitle>
           <DialogDescription>
             Share your review and mark as recommended. Visitors will see these on the map.
           </DialogDescription>
@@ -288,7 +307,7 @@ const PlaceForm = ({ open, onOpenChange, coords, categories, onSubmit, variant =
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit">Save place</Button>
+            <Button type="submit">{initialData ? 'Update place' : 'Save place'}</Button>
           </div>
         </form>
       </DialogContent>

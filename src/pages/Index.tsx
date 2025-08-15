@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { PanelLeftClose, PanelLeftOpen, MapPin, Star } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, MapPin, Star, Edit, Trash2 } from "lucide-react";
 
 const CITIES: Record<string, { center: [number, number]; zoom: number }> = {
   "São Paulo": { center: [-46.6333, -23.5505], zoom: 11 },
@@ -38,6 +38,7 @@ const Index = () => {
   const [clickCoords, setClickCoords] = useState<[number, number] | undefined>(undefined);
   const [focus, setFocus] = useState<[number, number] | undefined>(undefined);
   const [focusTimestamp, setFocusTimestamp] = useState<number>(0);
+  const [editingPlace, setEditingPlace] = useState<Place | undefined>(undefined);
 
   const handleMapClick = (lng: number, lat: number) => {
     if (!adminMode) return;
@@ -51,20 +52,46 @@ const Index = () => {
   };
 
   const handleAddPlace = (data: PlaceFormData) => {
-    if (!clickCoords) return;
-    const newPlace: Place = {
-      id: Date.now().toString(),
-      name: data.name,
-      city: selectedCity,
-      category: data.category as Exclude<Category, "All">,
-      rating: data.rating,
-      review: data.review,
-      coordinates: clickCoords,
-      recommendedBy: data.recommendedBy,
-    };
-    setPlaces((p) => [newPlace, ...p]);
+    if (editingPlace) {
+      // Update existing place
+      const updatedPlace: Place = {
+        ...editingPlace,
+        name: data.name,
+        category: data.category as Exclude<Category, "All">,
+        rating: data.rating,
+        review: data.review,
+        recommendedBy: data.recommendedBy,
+      };
+      setPlaces((p) => p.map(place => place.id === editingPlace.id ? updatedPlace : place));
+      setEditingPlace(undefined);
+      toast({ title: "Place updated", description: `${data.name} has been updated.` });
+    } else {
+      // Add new place
+      if (!clickCoords) return;
+      const newPlace: Place = {
+        id: Date.now().toString(),
+        name: data.name,
+        city: selectedCity,
+        category: data.category as Exclude<Category, "All">,
+        rating: data.rating,
+        review: data.review,
+        coordinates: clickCoords,
+        recommendedBy: data.recommendedBy,
+      };
+      setPlaces((p) => [newPlace, ...p]);
+      toast({ title: "Place saved", description: `${data.name} added to ${selectedCity}.` });
+    }
     setFormOpen(false);
-    toast({ title: "Place saved", description: `${data.name} added to ${selectedCity}.` });
+  };
+
+  const handleEditPlace = (place: Place) => {
+    setEditingPlace(place);
+    setFormOpen(true);
+  };
+
+  const handleDeletePlace = (placeId: string) => {
+    setPlaces((p) => p.filter(place => place.id !== placeId));
+    toast({ title: "Place deleted", description: "Place has been removed." });
   };
 
   const filteredPlaces = useMemo(() => {
@@ -84,8 +111,10 @@ const Index = () => {
       category: p.category,
       review: p.review,
       recommendedBy: p.recommendedBy,
+      onEdit: adminMode ? () => handleEditPlace(p) : undefined,
+      onDelete: adminMode ? () => handleDeletePlace(p.id) : undefined,
     }));
-  }, [filteredPlaces]);
+  }, [filteredPlaces, adminMode]);
 
   const cityCenter = CITIES[selectedCity]?.center;
 
@@ -202,22 +231,54 @@ const Index = () => {
                       focus && focus[0] === p.coordinates[0] && focus[1] === p.coordinates[1] 
                         ? 'place-card--focused' 
                         : ''
-                    } cursor-pointer transition-all duration-200`}
-                    onClick={() => handleFocusPlace(p.coordinates)}
+                    } transition-all duration-200`}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="font-medium text-sidebar-foreground">{p.name}</div>
+                    <div 
+                      className="cursor-pointer"
+                      onClick={() => handleFocusPlace(p.coordinates)}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="font-medium text-sidebar-foreground">{p.name}</div>
+                      </div>
+                      <div className="text-xs text-sidebar-foreground/70 mb-1">
+                        {p.category} • {"★".repeat(Math.round(p.rating))} ({p.rating})
+                      </div>
+                      {p.review && (
+                        <div className="text-sm text-sidebar-foreground/80 leading-relaxed">{p.review}</div>
+                      )}
+                      {focus && focus[0] === p.coordinates[0] && focus[1] === p.coordinates[1] && (
+                        <div className="mt-2 text-xs text-red-600 font-medium flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          Map focused here
+                        </div>
+                      )}
                     </div>
-                    <div className="text-xs text-sidebar-foreground/70 mb-1">
-                      {p.category} • {"★".repeat(Math.round(p.rating))} ({p.rating})
-                    </div>
-                    {p.review && (
-                      <div className="text-sm text-sidebar-foreground/80 leading-relaxed">{p.review}</div>
-                    )}
-                    {focus && focus[0] === p.coordinates[0] && focus[1] === p.coordinates[1] && (
-                      <div className="mt-2 text-xs text-red-600 font-medium flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        Map focused here
+                    {adminMode && (
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-sidebar-border/30">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditPlace(p);
+                          }}
+                          className="flex-1 h-8 text-xs"
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePlace(p.id);
+                          }}
+                          className="flex-1 h-8 text-xs text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -257,11 +318,17 @@ const Index = () => {
           <div className={`admin-form-overlay ${sidebarVisible ? 'admin-form-overlay--shifted' : ''}`}>
             <PlaceForm
               open={formOpen}
-              onOpenChange={setFormOpen}
+              onOpenChange={(open) => {
+                setFormOpen(open);
+                if (!open) {
+                  setEditingPlace(undefined);
+                }
+              }}
               coords={clickCoords}
               categories={CATEGORIES.filter((c) => c !== "All") as string[]}
               onSubmit={handleAddPlace}
               variant="sidebar"
+              initialData={editingPlace}
             />
           </div>
         </>
