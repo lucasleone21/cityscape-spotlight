@@ -31,6 +31,7 @@ type Place = {
   review: string;
   coordinates: [number, number];
   recommendedBy?: string;
+  image: string;
 };
 
 const Index = () => {
@@ -76,7 +77,17 @@ const Index = () => {
   };
 
   const handleAddPlace = (data: PlaceFormData) => {
+     // Converte a imagem (se for um arquivo novo) para uma URL
+    let imageUrl: string | undefined = undefined;
+    if (data.image && typeof data.image !== 'string') {
+      imageUrl = URL.createObjectURL(data.image);
+    } else if (typeof data.image === 'string') {
+      imageUrl = data.image; // Mantém a URL existente se não foi alterada
+    }
     if (editingPlace) {
+      if (editingPlace.image && imageUrl !== editingPlace.image) {
+        URL.revokeObjectURL(editingPlace.image);
+    }
       // Update existing place
       const updatedPlace: Place = {
         ...editingPlace,
@@ -85,6 +96,7 @@ const Index = () => {
         rating: data.rating,
         review: data.review,
         recommendedBy: data.recommendedBy,
+        image: imageUrl,
       };
       setPlaces((p) => p.map(place => place.id === editingPlace.id ? updatedPlace : place));
       setEditingPlace(undefined);
@@ -105,6 +117,7 @@ const Index = () => {
         review: data.review,
         coordinates: clickCoords,
         recommendedBy: data.recommendedBy,
+        image: imageUrl,
       };
       setPlaces((p) => [newPlace, ...p]);
       toast({ title: "Place saved", description: `${data.name} added to ${selectedCity}.` });
@@ -146,6 +159,7 @@ const Index = () => {
       category: p.category,
       review: p.review,
       recommendedBy: p.recommendedBy,
+      image: p.image,
       // Only add callbacks when admin mode is explicitly true
       onEdit: adminMode === true ? () => handleEditPlace(p) : undefined,
       onDelete: adminMode === true ? () => handleDeletePlace(p.id) : undefined,
