@@ -198,58 +198,41 @@ All colors MUST be HSL.
     transform: scale(1.02);
   }
 
-  /* Map marker styles using design system tokens */
-  .map-marker {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 3px solid white;
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-foreground)));
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 2px hsla(var(--primary), 0.2);
+  /* Chef hat marker styles */
+  .chef-hat-marker {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: translateZ(0);
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     cursor: pointer;
   }
   
-  .map-marker:hover {
-    transform: scale(1.2) translateZ(0);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 0 3px hsla(var(--primary), 0.3);
-    z-index: 1000;
-  }
-  
-  .chef-hat-icon {
-    color: white;
-    width: 20px;
-    height: 20px;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-  }
-  
-  /* Highlighted place marker styling */
-  .map-marker--focused {
-    background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-foreground)));
-    border-color: hsl(var(--accent));
-    box-shadow: 0 0 0 4px hsla(var(--accent), 0.3), 0 6px 16px rgba(0, 0, 0, 0.2);
-    animation: pulse-glow 2s infinite;
-  }
-  
-  .map-marker--focused:hover {
-    background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary)));
-    border-color: hsl(var(--primary));
-    box-shadow: 0 0 0 4px hsla(var(--primary), 0.4), 0 8px 20px rgba(0, 0, 0, 0.3);
+  .chef-hat-marker:hover {
+    transform: scale(1.3);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 0 2px rgba(220, 38, 38, 0.5));
   }
 
-  @keyframes pulse-glow {
+  /* Focused chef hat marker styling */
+  .chef-hat-marker--focused {
+    fill: #ef4444;
+    stroke: #000000;
+    stroke-width: 2;
+    animation: pulse-hat 2s infinite;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 8px rgba(239, 68, 68, 0.6));
+  }
+  
+  .chef-hat-marker--focused:hover {
+    transform: scale(1.4);
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 12px rgba(239, 68, 68, 0.8));
+  }
+
+  @keyframes pulse-hat {
     0%, 100% {
-      box-shadow: 0 0 0 4px hsla(var(--accent), 0.3), 0 6px 16px rgba(0, 0, 0, 0.2);
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 8px rgba(239, 68, 68, 0.6));
     }
     50% {
-      box-shadow: 0 0 0 6px hsla(var(--accent), 0.2), 0 6px 16px rgba(0, 0, 0, 0.2);
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 16px rgba(239, 68, 68, 0.8));
     }
   }
+  
   
 
   /* Admin form overlay */
