@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { PanelLeftClose, PanelLeftOpen, MapPin, Star, Edit, Trash2, Users } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const CREATOR_IMAGES: Record<string, string> = {
   "Danilo Carneiro": "/danilo-carneiro.png",
@@ -48,6 +49,42 @@ const Index = () => {
   const [focusTimestamp, setFocusTimestamp] = useState<number>(0);
   const [editingPlace, setEditingPlace] = useState<Place | undefined>(undefined);
 
+  // Load places from database on component mount
+  useEffect(() => {
+    const loadPlaces = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('places')
+          .select('*');
+        
+        if (error) throw error;
+        
+        const formattedPlaces: Place[] = data.map(place => ({
+          id: place.id,
+          name: place.name,
+          city: place.city as keyof typeof CITIES,
+          category: place.category as Exclude<Category, "All">,
+          rating: place.rating,
+          review: place.review,
+          coordinates: [place.lng, place.lat] as [number, number],
+          recommendedBy: place.recommended_by,
+          image: place.image || '',
+        }));
+        
+        setPlaces(formattedPlaces);
+      } catch (error) {
+        console.error('Error loading places:', error);
+        toast({ 
+          title: "Error loading places", 
+          description: "Could not load places from database.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    loadPlaces();
+  }, []);
+
 
 
   const handleCreatorClick = (creatorName: string) => {
@@ -76,53 +113,101 @@ const Index = () => {
     setFocusTimestamp(Date.now()); // Force update even if coordinates are the same
   };
 
-  const handleAddPlace = (data: PlaceFormData) => {
-     // Converte a imagem (se for um arquivo novo) para uma URL
-    let imageUrl: string | undefined = undefined;
-    if (data.image && typeof data.image !== 'string') {
-      imageUrl = URL.createObjectURL(data.image);
-    } else if (typeof data.image === 'string') {
-      imageUrl = data.image; // Mantém a URL existente se não foi alterada
-    }
-    if (editingPlace) {
-      if (editingPlace.image && imageUrl !== editingPlace.image) {
-        URL.revokeObjectURL(editingPlace.image);
-    }
-      // Update existing place
-      const updatedPlace: Place = {
-        ...editingPlace,
-        name: data.name,
-        category: data.category as Exclude<Category, "All">,
-        rating: data.rating,
-        review: data.review,
-        recommendedBy: data.recommendedBy,
-        image: imageUrl,
-      };
-      setPlaces((p) => p.map(place => place.id === editingPlace.id ? updatedPlace : place));
-      setEditingPlace(undefined);
-      // Force focus refresh to update map popup
-      if (focus && focus[0] === editingPlace.coordinates[0] && focus[1] === editingPlace.coordinates[1]) {
-        setFocusTimestamp(Date.now());
+  const handleAddPlace = async (data: PlaceFormData) => {
+    try {
+      // Convert image file to URL if needed (for display purposes)
+      let imageUrl: string | undefined = undefined;
+      if (data.image && typeof data.image !== 'string') {
+        imageUrl = URL.createObjectURL(data.image);
+      } else if (typeof data.image === 'string') {
+        imageUrl = data.image;
       }
-      toast({ title: "Place updated", description: `${data.name} has been updated.` });
-    } else {
-      // Add new place
-      if (!clickCoords) return;
-      const newPlace: Place = {
-        id: Date.now().toString(),
-        name: data.name,
-        city: selectedCity,
-        category: data.category as Exclude<Category, "All">,
-        rating: data.rating,
-        review: data.review,
-        coordinates: clickCoords,
-        recommendedBy: data.recommendedBy,
-        image: imageUrl,
-      };
-      setPlaces((p) => [newPlace, ...p]);
-      toast({ title: "Place saved", description: `${data.name} added to ${selectedCity}.` });
+
+      if (editingPlace) {
+        // Update existing place in database
+        const { error } = await supabase
+          .from('places')
+          .update({
+            name: data.name,
+            category: data.category,
+            rating: data.rating,
+            review: data.review,
+            recommended_by: data.recommendedBy,
+            image: imageUrl,
+          })
+          .eq('id', editingPlace.id);
+
+        if (error) throw error;
+
+        // Clean up old image URL if changed
+        if (editingPlace.image && imageUrl !== editingPlace.image) {
+          URL.revokeObjectURL(editingPlace.image);
+        }
+
+        // Update local state
+        const updatedPlace: Place = {
+          ...editingPlace,
+          name: data.name,
+          category: data.category as Exclude<Category, "All">,
+          rating: data.rating,
+          review: data.review,
+          recommendedBy: data.recommendedBy,
+          image: imageUrl,
+        };
+        setPlaces((p) => p.map(place => place.id === editingPlace.id ? updatedPlace : place));
+        setEditingPlace(undefined);
+
+        // Force focus refresh to update map popup
+        if (focus && focus[0] === editingPlace.coordinates[0] && focus[1] === editingPlace.coordinates[1]) {
+          setFocusTimestamp(Date.now());
+        }
+        toast({ title: "Place updated", description: `${data.name} has been updated.` });
+      } else {
+        // Add new place to database
+        if (!clickCoords) return;
+
+        const { data: insertedPlace, error } = await supabase
+          .from('places')
+          .insert({
+            name: data.name,
+            city: selectedCity,
+            category: data.category,
+            rating: data.rating,
+            review: data.review,
+            lat: clickCoords[1],
+            lng: clickCoords[0],
+            recommended_by: data.recommendedBy,
+            image: imageUrl,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Add to local state
+        const newPlace: Place = {
+          id: insertedPlace.id,
+          name: insertedPlace.name,
+          city: insertedPlace.city as keyof typeof CITIES,
+          category: insertedPlace.category as Exclude<Category, "All">,
+          rating: insertedPlace.rating,
+          review: insertedPlace.review,
+          coordinates: [insertedPlace.lng, insertedPlace.lat] as [number, number],
+          recommendedBy: insertedPlace.recommended_by,
+          image: insertedPlace.image || '',
+        };
+        setPlaces((p) => [newPlace, ...p]);
+        toast({ title: "Place saved", description: `${data.name} added to ${selectedCity}.` });
+      }
+      setFormOpen(false);
+    } catch (error) {
+      console.error('Error saving place:', error);
+      toast({ 
+        title: "Error saving place", 
+        description: "Could not save place to database.",
+        variant: "destructive"
+      });
     }
-    setFormOpen(false);
   };
 
   const handleEditPlace = (place: Place) => {
@@ -130,15 +215,36 @@ const Index = () => {
     setFormOpen(true);
   };
 
-  const handleDeletePlace = (placeId: string) => {
-    const deletingPlace = places.find(p => p.id === placeId);
-    setPlaces((p) => p.filter(place => place.id !== placeId));
-    // Clear focus if we're deleting the focused place
-    if (deletingPlace && focus && focus[0] === deletingPlace.coordinates[0] && focus[1] === deletingPlace.coordinates[1]) {
-      setFocus(undefined);
-      setFocusTimestamp(0);
+  const handleDeletePlace = async (placeId: string) => {
+    try {
+      const deletingPlace = places.find(p => p.id === placeId);
+      
+      // Delete from database
+      const { error } = await supabase
+        .from('places')
+        .delete()
+        .eq('id', placeId);
+
+      if (error) throw error;
+
+      // Update local state
+      setPlaces((p) => p.filter(place => place.id !== placeId));
+      
+      // Clear focus if we're deleting the focused place
+      if (deletingPlace && focus && focus[0] === deletingPlace.coordinates[0] && focus[1] === deletingPlace.coordinates[1]) {
+        setFocus(undefined);
+        setFocusTimestamp(0);
+      }
+      
+      toast({ title: "Place deleted", description: "Place has been removed." });
+    } catch (error) {
+      console.error('Error deleting place:', error);
+      toast({ 
+        title: "Error deleting place", 
+        description: "Could not delete place from database.",
+        variant: "destructive"
+      });
     }
-    toast({ title: "Place deleted", description: "Place has been removed." });
   };
 
   const filteredPlaces = useMemo(() => {
